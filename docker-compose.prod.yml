@@ -1,0 +1,57 @@
+# 生产/预发可用镜像部署示例（配合 CD 推送到 GHCR）
+# 用法：
+#   1. 在仓库 Settings → Actions → General 开启对 GHCR 的读写
+#   2. 服务器登录：echo $GHCR_TOKEN | docker login ghcr.io -u USER --password-stdin
+#   3. 复制本文件并填写环境变量后：docker compose -f docker-compose.prod.yml up -d
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-zzblog}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-zzblog}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  backEnd:
+    image: ghcr.io/${GHCR_OWNER:-jcak-cyber}/zz-blog-backend:${IMAGE_TAG:-latest}
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-zzblog}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-zzblog}?schema=public
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?set JWT_ACCESS_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?set JWT_REFRESH_SECRET}
+      IMPORT_TOKEN: ${IMPORT_TOKEN:?set IMPORT_TOKEN}
+      UPLOAD_DIR: uploads
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+      PORT: 4000
+      NODE_ENV: production
+    ports:
+      - '${BACKEND_PORT:-4000}:4000'
+    volumes:
+      - uploads:/app/apps/backEnd/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontEnd:
+    image: ghcr.io/${GHCR_OWNER:-jcak-cyber}/zz-blog-frontend:${IMAGE_TAG:-latest}
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:4000/api/v1}
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+      BACKEND_URL: http://backEnd:4000
+    ports:
+      - '${FRONTEND_PORT:-3000}:3000'
+    depends_on:
+      - backEnd
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  uploads:

@@ -93,6 +93,42 @@ pnpm import:content
 docker compose up --build
 ```
 
+## CI/CD（GitHub Actions）
+
+仓库已配置：
+
+| Workflow | 触发 | 作用 |
+|----------|------|------|
+| `.github/workflows/ci.yml` | PR / push 到 `main` | 安装依赖、Lint、前后端 Build |
+| `.github/workflows/cd.yml` | push 到 `main`、打 `v*` 标签、或手动 | 构建并推送镜像到 GHCR |
+
+镜像地址（小写 owner）：
+
+- `ghcr.io/<owner>/zz-blog-backend:latest`
+- `ghcr.io/<owner>/zz-blog-frontend:latest`
+
+可选仓库变量（Settings → Secrets and variables → Actions → Variables）：
+
+- `NEXT_PUBLIC_API_BASE_URL`
+- `NEXT_PUBLIC_SITE_URL`
+
+服务器拉取部署示例见 `docker-compose.prod.yml`：
+
+```bash
+# 登录 GHCR（用有 read:packages 的 PAT）
+echo $GHCR_TOKEN | docker login ghcr.io -u <github-user> --password-stdin
+
+export POSTGRES_PASSWORD=...
+export JWT_ACCESS_SECRET=...
+export JWT_REFRESH_SECRET=...
+export IMPORT_TOKEN=...
+export GHCR_OWNER=jcak-cyber
+docker compose -f docker-compose.prod.yml pull
+docker compose -f docker-compose.prod.yml up -d
+```
+
+首次推送后，若 GHCR 包为私有，可在 GitHub Packages 页面将包设为 Public，或继续用 PAT 拉取。
+
 ## 上线安全检查清单
 
 本地开发用 `http://localhost` 时，浏览器 Network 里能看到登录请求中的密码字段，这是正常现象，**不要**为此在前端再做一层「自制加密」。真正要做的是通道与密钥安全：

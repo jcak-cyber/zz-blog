@@ -51,8 +51,8 @@ function mapAuthorDetail(post: PostWithRelations) {
 }
 
 function mapAuthorSummary(post: PostWithRelations) {
-  const d = mapAuthorDetail(post);
-  const { content: _c, ...rest } = d;
+  const { content: _content, ...rest } = mapAuthorDetail(post);
+  void _content;
   return rest;
 }
 
@@ -211,7 +211,7 @@ export class AuthorPostsService {
 
     const nextTitle = dto.title !== undefined ? dto.title : current.title;
     const nextContent = dto.content !== undefined ? dto.content : current.content;
-    let nextSlug = dto.slug !== undefined ? dto.slug.trim() : current.slug;
+    const nextSlug = dto.slug !== undefined ? dto.slug.trim() : current.slug;
 
     if (dto.slug !== undefined && dto.slug.trim() !== current.slug) {
       if (isPubliclyVisible(current) && !dto.confirmSlugChange) {

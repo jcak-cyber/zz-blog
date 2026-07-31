@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-and-build:
+    name: Lint & Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        working-directory: apps/backEnd
+        env:
+          # prisma generate 不连库，仅占位
+          DATABASE_URL: postgresql://zzblog:zzblog@127.0.0.1:5432/zzblog?schema=public
+        run: pnpm prisma:generate
+
+      - name: Lint frontend
+        run: pnpm --filter @zz-blog/frontend lint
+
+      - name: Lint backend
+        working-directory: apps/backEnd
+        run: pnpm exec eslint "src/**/*.ts" "scripts/**/*.ts"
+
+      - name: Build backend
+        working-directory: apps/backEnd
+        env:
+          DATABASE_URL: postgresql://zzblog:zzblog@127.0.0.1:5432/zzblog?schema=public
+        run: pnpm build
+
+      - name: Build frontend
+        working-directory: apps/frontEnd
+        env:
+          NEXT_PUBLIC_API_BASE_URL: http://localhost:4000/api/v1
+          NEXT_PUBLIC_SITE_URL: http://localhost:3000
+          BACKEND_URL: http://127.0.0.1:4000
+        run: pnpm build
