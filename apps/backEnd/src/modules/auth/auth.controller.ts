@@ -1,0 +1,73 @@
+import {
+  Controller,
+  Get,
+  HttpCode,
+  Post,
+  Body,
+  Req,
+  Res,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiCookieAuth,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
+import { Request, Response } from 'express';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { AUTH_ERRORS, REFRESH_COOKIE } from './auth.constants';
+import { AuthService } from './auth.service';
+import { AuthUserDto } from './dto/auth-user.dto';
+import { LoginDto } from './dto/login.dto';
+
+@ApiTags('auth')
+@Controller('auth')
+export class AuthController {
+  constructor(private readonly authService: AuthService) {}
+
+  @Post('login')
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @ApiOperation({ summary: '作者登录' })
+  @ApiOkResponse({ description: '登录成功，写入 HttpOnly Cookie' })
+  @ApiUnauthorizedResponse({ description: AUTH_ERRORS.INVALID_CREDENTIALS })
+  async login(
+    @Body() dto: LoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<{ user: AuthUserDto }> {
+    return this.authService.login(dto, res);
+  }
+
+  @Post('refresh')
+  @HttpCode(200)
+  @ApiOperation({ summary: '刷新 Access Cookie' })
+  async refresh(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<{ user: AuthUserDto }> {
+    const token = req.cookies?.[REFRESH_COOKIE] as string | undefined;
+    return this.authService.refresh(token, res);
+  }
+
+  @Post('logout')
+  @HttpCode(204)
+  @ApiOperation({ summary: '登出并清除 Cookie' })
+  logout(@Res({ passthrough: true }) res: Response): void {
+    this.authService.logout(res);
+  }
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiCookieAuth('access_token')
+  @ApiOperation({ summary: '当前登录作者' })
+  me(@CurrentUser() user: AuthUserDto | undefined): AuthUserDto {
+    if (!user) {
+      throw new UnauthorizedException(AUTH_ERRORS.UNAUTHORIZED);
+    }
+    return user;
+  }
+}

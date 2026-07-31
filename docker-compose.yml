@@ -1,0 +1,56 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: zzblog
+      POSTGRES_PASSWORD: zzblog
+      POSTGRES_DB: zzblog
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U zzblog -d zzblog']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backEnd:
+    build:
+      context: .
+      dockerfile: apps/backEnd/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://zzblog:zzblog@postgres:5432/zzblog?schema=public
+      JWT_ACCESS_SECRET: change-me-access
+      JWT_REFRESH_SECRET: change-me-refresh
+      IMPORT_TOKEN: dev-import-token
+      UPLOAD_DIR: uploads
+      CORS_ORIGIN: http://localhost:3000
+      PORT: 4000
+      NODE_ENV: production
+    ports:
+      - '4000:4000'
+    volumes:
+      - uploads:/app/apps/backEnd/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontEnd:
+    build:
+      context: .
+      dockerfile: apps/frontEnd/Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:4000/api/v1
+        NEXT_PUBLIC_SITE_URL: http://localhost:3000
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:4000/api/v1
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+    ports:
+      - '3000:3000'
+    depends_on:
+      - backEnd
+
+volumes:
+  pgdata:
+  uploads:

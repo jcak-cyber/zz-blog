@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build
+dist/
+build/
+.next/
+out/
+coverage/
+
+# Env
+.env
+.env.*
+!.env.example
+!**/.env.example
+
+# Logs & OS
+*.log
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+
+# IDE
+.vscode/
+.idea/
+
+# Uploads (keep directory, ignore files)
+apps/backEnd/uploads/*
+!apps/backEnd/uploads/.gitkeep
+
+# Prisma
+apps/backEnd/prisma/*.db
+apps/backEnd/prisma/*.db-journal
+
+# Misc
+*.tsbuildinfo
