@@ -2,12 +2,12 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { PostDetailView } from '@/features/posts/post-detail';
 import { renderPostMarkdown } from '@/lib/mdx';
-import { fetchPostBySlug } from '@/lib/posts';
+import { fetchPostBySlug, normalizeSlugParam } from '@/lib/posts';
 
 type Props = { params: { slug: string } };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const post = await fetchPostBySlug(params.slug);
+  const post = await fetchPostBySlug(normalizeSlugParam(params.slug));
   if (!post) {
     return { title: '未找到文章' };
   }
@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function PostPage({ params }: Props) {
-  const post = await fetchPostBySlug(params.slug);
+  const post = await fetchPostBySlug(normalizeSlugParam(params.slug));
   if (!post) {
     notFound();
   }

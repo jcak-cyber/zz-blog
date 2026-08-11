@@ -1,6 +1,19 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type MouseEvent as ReactMouseEvent,
+  type ReactNode,
+  type Ref,
+  type RefObject,
+} from 'react';
+import { createPortal } from 'react-dom';
 import type { Editor } from '@tiptap/react';
 import {
   AlignCenter,
@@ -17,8 +30,6 @@ import {
   List,
   ListOrdered,
   ListTree,
-  Maximize2,
-  Minimize2,
   Minus,
   MoreHorizontal,
   PaintBucket,
@@ -32,14 +43,11 @@ import {
   Video,
   Italic,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { uploadCover } from '@/lib/author-posts';
 
 type Props = {
   editor: Editor;
-  wide: boolean;
-  onToggleWide: () => void;
   historyItems: Array<{ id: string; at: number; preview: string; content: string }>;
   onRestoreHistory: (content: string) => void;
 };
@@ -55,7 +63,30 @@ type MenuKey =
   | 'image'
   | 'history'
   | 'toc'
+  | 'table'
   | null;
+
+const TABLE_MAX_ROWS = 8;
+const TABLE_MAX_COLS = 8;
+
+const CODE_LANGUAGES = [
+  { id: 'javascript', label: 'JavaScript' },
+  { id: 'typescript', label: 'TypeScript' },
+  { id: 'json', label: 'JSON' },
+  { id: 'css', label: 'CSS' },
+  { id: 'html', label: 'HTML' },
+  { id: 'xml', label: 'XML' },
+  { id: 'bash', label: 'Bash' },
+  { id: 'shell', label: 'Shell' },
+  { id: 'python', label: 'Python' },
+  { id: 'java', label: 'Java' },
+  { id: 'go', label: 'Go' },
+  { id: 'rust', label: 'Rust' },
+  { id: 'sql', label: 'SQL' },
+  { id: 'markdown', label: 'Markdown' },
+  { id: 'yaml', label: 'YAML' },
+  { id: 'plaintext', label: '纯文本' },
+] as const;
 
 const TEXT_COLORS = [
   { label: '墨色', value: '#1f2a24' },
@@ -75,6 +106,11 @@ const BG_COLORS = [
   { label: '浅灰', value: '#e8e6e1' },
 ];
 
+/** 避免点击工具栏时编辑器失焦、选区丢失（TipTap 惯例） */
+function keepEditorSelection(e: ReactMouseEvent) {
+  e.preventDefault();
+}
+
 function ToolBtn({
   label,
   active,
@@ -82,6 +118,7 @@ function ToolBtn({
   onClick,
   children,
   title,
+  buttonRef,
 }: {
   label: string;
   active?: boolean;
@@ -89,48 +126,23 @@ function ToolBtn({
   onClick: () => void;
   children: ReactNode;
   title?: string;
+  buttonRef?: Ref<HTMLButtonElement>;
 }) {
   return (
     <button
+      ref={buttonRef}
       type="button"
       title={title || label}
       aria-label={label}
       aria-pressed={active}
       disabled={disabled}
+      onMouseDown={keepEditorSelection}
       onClick={onClick}
       className={cn('author-rt-tool', active && 'author-rt-tool--active')}
     >
       <span className="author-rt-tool-icon">{children}</span>
       <span className="author-rt-tool-label">{label}</span>
     </button>
-  );
-}
-
-function MenuPanel({
-  open,
-  onClose,
-  children,
-  className,
-}: {
-  open: boolean;
-  onClose: () => void;
-  children: ReactNode;
-  className?: string;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!open) return;
-    function onDoc(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
-    }
-    document.addEventListener('mousedown', onDoc);
-    return () => document.removeEventListener('mousedown', onDoc);
-  }, [open, onClose]);
-  if (!open) return null;
-  return (
-    <div ref={ref} className={cn('author-rt-menu', className)} role="menu">
-      {children}
-    </div>
   );
 }
 
@@ -148,10 +160,207 @@ function MenuItem({
       type="button"
       role="menuitem"
       className={cn('author-rt-menu-item', active && 'author-rt-menu-item--active')}
+      onMouseDown={keepEditorSelection}
       onClick={onClick}
     >
       {children}
     </button>
+  );
+}
+
+function TableSizePicker({
+  onPick,
+}: {
+  onPick: (rows: number, cols: number) => void;
+}) {
+  const [hover, setHover] = useState({ rows: 0, cols: 0 });
+  const label =
+    hover.rows > 0 && hover.cols > 0 ? `${hover.rows} × ${hover.cols}` : '选择行列';
+
+  return (
+    <div className="author-rt-table-picker" onMouseLeave={() => setHover({ rows: 0, cols: 0 })}>
+      <p className="author-rt-table-picker-label">{label}</p>
+      <div
+        className="author-rt-table-grid"
+        role="grid"
+        aria-label="选择表格大小"
+        style={{
+          gridTemplateColumns: `repeat(${TABLE_MAX_COLS}, 1.05rem)`,
+        }}
+      >
+        {Array.from({ length: TABLE_MAX_ROWS * TABLE_MAX_COLS }, (_, i) => {
+          const row = Math.floor(i / TABLE_MAX_COLS) + 1;
+          const col = (i % TABLE_MAX_COLS) + 1;
+          const active = row <= hover.rows && col <= hover.cols;
+          return (
+            <button
+              key={`${row}-${col}`}
+              type="button"
+              role="gridcell"
+              aria-label={`${row} 行 ${col} 列`}
+              className={cn('author-rt-table-cell', active && 'author-rt-table-cell--active')}
+              onMouseDown={keepEditorSelection}
+              onMouseEnter={() => setHover({ rows: row, cols: col })}
+              onFocus={() => setHover({ rows: row, cols: col })}
+              onClick={() => onPick(row, col)}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function Dropdown({
+  open,
+  onClose,
+  anchorRef,
+  align = 'start',
+  className,
+  children,
+}: {
+  open: boolean;
+  onClose: () => void;
+  anchorRef: RefObject<HTMLElement | null>;
+  align?: 'start' | 'end';
+  className?: string;
+  children: ReactNode;
+}) {
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [style, setStyle] = useState<CSSProperties>({
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    visibility: 'hidden',
+  });
+
+  const place = useCallback(() => {
+    const anchor = anchorRef.current;
+    const menu = menuRef.current;
+    if (!anchor || !menu) return;
+
+    const rect = anchor.getBoundingClientRect();
+    const menuWidth = menu.offsetWidth || 160;
+    const menuHeight = menu.offsetHeight || 80;
+    const gap = 4;
+    const pad = 8;
+
+    let left = align === 'end' ? rect.right - menuWidth : rect.left;
+    left = Math.min(Math.max(pad, left), window.innerWidth - menuWidth - pad);
+
+    let top = rect.bottom + gap;
+    if (top + menuHeight > window.innerHeight - pad) {
+      top = Math.max(pad, rect.top - menuHeight - gap);
+    }
+
+    setStyle({
+      position: 'fixed',
+      top,
+      left,
+      visibility: 'visible',
+      zIndex: 80,
+    });
+  }, [anchorRef, align]);
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    place();
+  }, [open, place, children]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onWin = () => place();
+    window.addEventListener('resize', onWin);
+    // 捕获阶段：工具栏横向滚动也要重新定位
+    window.addEventListener('scroll', onWin, true);
+    return () => {
+      window.removeEventListener('resize', onWin);
+      window.removeEventListener('scroll', onWin, true);
+    };
+  }, [open, place]);
+
+  useEffect(() => {
+    if (!open) return;
+    function onDoc(e: MouseEvent) {
+      const t = e.target as Node;
+      if (menuRef.current?.contains(t)) return;
+      if (anchorRef.current?.contains(t)) return;
+      onClose();
+    }
+    // 用 click 而不是 mousedown，避免与按钮 toggle 抢事件
+    document.addEventListener('click', onDoc);
+    return () => document.removeEventListener('click', onDoc);
+  }, [open, onClose, anchorRef]);
+
+  useEffect(() => {
+    if (!open) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose();
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [open, onClose]);
+
+  if (!open || typeof document === 'undefined') return null;
+
+  return createPortal(
+    <div ref={menuRef} className={cn('author-rt-menu', className)} role="menu" style={style}>
+      {children}
+    </div>,
+    document.body,
+  );
+}
+
+function ToolbarMenu({
+  id,
+  label,
+  icon,
+  open,
+  active,
+  disabled,
+  onToggle,
+  onClose,
+  align,
+  menuClassName,
+  children,
+}: {
+  id: string;
+  label: string;
+  icon: ReactNode;
+  open: boolean;
+  active?: boolean;
+  disabled?: boolean;
+  onToggle: () => void;
+  onClose: () => void;
+  align?: 'start' | 'end';
+  menuClassName?: string;
+  children: ReactNode;
+}) {
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const menuId = useId();
+
+  return (
+    <div className="author-rt-tool-wrap">
+      <ToolBtn
+        label={label}
+        active={active || open}
+        disabled={disabled}
+        buttonRef={btnRef}
+        onClick={onToggle}
+        title={label}
+      >
+        {icon}
+      </ToolBtn>
+      <Dropdown
+        open={open}
+        onClose={onClose}
+        anchorRef={btnRef}
+        align={align}
+        className={menuClassName}
+      >
+        <div id={`${menuId}-${id}`}>{children}</div>
+      </Dropdown>
+    </div>
   );
 }
 
@@ -169,18 +378,14 @@ function extractHeadings(editor: Editor) {
   return items;
 }
 
-export function RichTextToolbar({
-  editor,
-  wide,
-  onToggleWide,
-  historyItems,
-  onRestoreHistory,
-}: Props) {
+export function RichTextToolbar({ editor, historyItems, onRestoreHistory }: Props) {
   const [menu, setMenu] = useState<MenuKey>(null);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const close = useCallback(() => setMenu(null), []);
-  const toggle = (key: MenuKey) => setMenu((m) => (m === key ? null : key));
+  const toggle = useCallback((key: Exclude<MenuKey, null>) => {
+    setMenu((m) => (m === key ? null : key));
+  }, []);
 
   const headings = menu === 'toc' ? extractHeadings(editor) : [];
 
@@ -260,26 +465,31 @@ export function RichTextToolbar({
 
   return (
     <div className="author-rt-toolbar" role="toolbar" aria-label="正文格式">
-      <div className="author-rt-group">
-        <ToolBtn
-          label="撤消"
-          disabled={!editor.can().undo()}
-          onClick={() => editor.chain().focus().undo().run()}
-        >
-          <Undo2 />
-        </ToolBtn>
-        <ToolBtn
-          label="重做"
-          disabled={!editor.can().redo()}
-          onClick={() => editor.chain().focus().redo().run()}
-        >
-          <Redo2 />
-        </ToolBtn>
-        <div className="author-rt-tool-wrap">
-          <ToolBtn label="历史" active={menu === 'history'} onClick={() => toggle('history')}>
-            <History />
+      <div className="author-rt-toolbar-track">
+        <div className="author-rt-group">
+          <ToolBtn
+            label="撤消"
+            disabled={!editor.can().undo()}
+            onClick={() => editor.chain().focus().undo().run()}
+          >
+            <Undo2 />
           </ToolBtn>
-          <MenuPanel open={menu === 'history'} onClose={close} className="author-rt-menu--wide">
+          <ToolBtn
+            label="重做"
+            disabled={!editor.can().redo()}
+            onClick={() => editor.chain().focus().redo().run()}
+          >
+            <Redo2 />
+          </ToolBtn>
+          <ToolbarMenu
+            id="history"
+            label="历史"
+            icon={<History />}
+            open={menu === 'history'}
+            onToggle={() => toggle('history')}
+            onClose={close}
+            menuClassName="author-rt-menu--wide"
+          >
             {historyItems.length === 0 ? (
               <p className="author-rt-menu-empty">暂无本地快照</p>
             ) : (
@@ -302,16 +512,18 @@ export function RichTextToolbar({
                 </MenuItem>
               ))
             )}
-          </MenuPanel>
+          </ToolbarMenu>
         </div>
-      </div>
 
-      <div className="author-rt-group">
-        <div className="author-rt-tool-wrap">
-          <ToolBtn label="格式" active={menu === 'format'} onClick={() => toggle('format')}>
-            <Heading />
-          </ToolBtn>
-          <MenuPanel open={menu === 'format'} onClose={close}>
+        <div className="author-rt-group">
+          <ToolbarMenu
+            id="format"
+            label="格式"
+            icon={<Heading />}
+            open={menu === 'format'}
+            onToggle={() => toggle('format')}
+            onClose={close}
+          >
             <MenuItem
               active={editor.isActive('paragraph')}
               onClick={() => {
@@ -337,20 +549,22 @@ export function RichTextToolbar({
                 标题 {level}
               </MenuItem>
             ))}
-          </MenuPanel>
-        </div>
-        <ToolBtn
-          label="加粗"
-          active={editor.isActive('bold')}
-          onClick={() => editor.chain().focus().toggleBold().run()}
-        >
-          <Bold />
-        </ToolBtn>
-        <div className="author-rt-tool-wrap">
-          <ToolBtn label="颜色" active={menu === 'color'} onClick={() => toggle('color')}>
-            <Type />
+          </ToolbarMenu>
+          <ToolBtn
+            label="加粗"
+            active={editor.isActive('bold')}
+            onClick={() => editor.chain().focus().toggleBold().run()}
+          >
+            <Bold />
           </ToolBtn>
-          <MenuPanel open={menu === 'color'} onClose={close}>
+          <ToolbarMenu
+            id="color"
+            label="颜色"
+            icon={<Type />}
+            open={menu === 'color'}
+            onToggle={() => toggle('color')}
+            onClose={close}
+          >
             <div className="author-rt-swatches">
               {TEXT_COLORS.map((c) => (
                 <button
@@ -359,6 +573,7 @@ export function RichTextToolbar({
                   title={c.label}
                   className="author-rt-swatch"
                   style={{ background: c.value }}
+                  onMouseDown={keepEditorSelection}
                   onClick={() => {
                     editor.chain().focus().setColor(c.value).run();
                     close();
@@ -374,13 +589,15 @@ export function RichTextToolbar({
             >
               清除颜色
             </MenuItem>
-          </MenuPanel>
-        </div>
-        <div className="author-rt-tool-wrap">
-          <ToolBtn label="背景" active={menu === 'bg'} onClick={() => toggle('bg')}>
-            <PaintBucket />
-          </ToolBtn>
-          <MenuPanel open={menu === 'bg'} onClose={close}>
+          </ToolbarMenu>
+          <ToolbarMenu
+            id="bg"
+            label="背景"
+            icon={<PaintBucket />}
+            open={menu === 'bg'}
+            onToggle={() => toggle('bg')}
+            onClose={close}
+          >
             <div className="author-rt-swatches">
               {BG_COLORS.filter((c) => c.value).map((c) => (
                 <button
@@ -389,6 +606,7 @@ export function RichTextToolbar({
                   title={c.label}
                   className="author-rt-swatch"
                   style={{ background: c.value }}
+                  onMouseDown={keepEditorSelection}
                   onClick={() => {
                     editor.chain().focus().toggleHighlight({ color: c.value }).run();
                     close();
@@ -404,13 +622,15 @@ export function RichTextToolbar({
             >
               清除背景
             </MenuItem>
-          </MenuPanel>
-        </div>
-        <div className="author-rt-tool-wrap">
-          <ToolBtn label="其他" active={menu === 'more'} onClick={() => toggle('more')}>
-            <MoreHorizontal />
-          </ToolBtn>
-          <MenuPanel open={menu === 'more'} onClose={close}>
+          </ToolbarMenu>
+          <ToolbarMenu
+            id="more"
+            label="其他"
+            icon={<MoreHorizontal />}
+            open={menu === 'more'}
+            onToggle={() => toggle('more')}
+            onClose={close}
+          >
             <MenuItem
               active={editor.isActive('italic')}
               onClick={() => {
@@ -446,16 +666,18 @@ export function RichTextToolbar({
             >
               <Highlighter className="size-3.5" /> 清除格式
             </MenuItem>
-          </MenuPanel>
+          </ToolbarMenu>
         </div>
-      </div>
 
-      <div className="author-rt-group">
-        <div className="author-rt-tool-wrap">
-          <ToolBtn label="列表" active={menu === 'list'} onClick={() => toggle('list')}>
-            <List />
-          </ToolBtn>
-          <MenuPanel open={menu === 'list'} onClose={close}>
+        <div className="author-rt-group">
+          <ToolbarMenu
+            id="list"
+            label="列表"
+            icon={<List />}
+            open={menu === 'list'}
+            onToggle={() => toggle('list')}
+            onClose={close}
+          >
             <MenuItem
               active={editor.isActive('bulletList')}
               onClick={() => {
@@ -474,13 +696,15 @@ export function RichTextToolbar({
             >
               <ListOrdered className="size-3.5" /> 有序列表
             </MenuItem>
-          </MenuPanel>
-        </div>
-        <div className="author-rt-tool-wrap">
-          <ToolBtn label="对齐" active={menu === 'align'} onClick={() => toggle('align')}>
-            <AlignLeft />
-          </ToolBtn>
-          <MenuPanel open={menu === 'align'} onClose={close}>
+          </ToolbarMenu>
+          <ToolbarMenu
+            id="align"
+            label="对齐"
+            icon={<AlignLeft />}
+            open={menu === 'align'}
+            onToggle={() => toggle('align')}
+            onClose={close}
+          >
             {(
               [
                 ['left', '左对齐', AlignLeft],
@@ -488,35 +712,38 @@ export function RichTextToolbar({
                 ['right', '右对齐', AlignRight],
                 ['justify', '两端对齐', AlignJustify],
               ] as const
-            ).map(([align, label, Icon]) => (
+            ).map(([alignValue, label, Icon]) => (
               <MenuItem
-                key={align}
-                active={editor.isActive({ textAlign: align })}
+                key={alignValue}
+                active={editor.isActive({ textAlign: alignValue })}
                 onClick={() => {
-                  editor.chain().focus().setTextAlign(align).run();
+                  editor.chain().focus().setTextAlign(alignValue).run();
                   close();
                 }}
               >
                 <Icon className="size-3.5" /> {label}
               </MenuItem>
             ))}
-          </MenuPanel>
-        </div>
-        <ToolBtn label="水平线" onClick={() => editor.chain().focus().setHorizontalRule().run()}>
-          <Minus />
-        </ToolBtn>
-        <ToolBtn
-          label="块引用"
-          active={editor.isActive('blockquote')}
-          onClick={() => editor.chain().focus().toggleBlockquote().run()}
-        >
-          <Quote />
-        </ToolBtn>
-        <div className="author-rt-tool-wrap">
-          <ToolBtn label="代码" active={menu === 'code'} onClick={() => toggle('code')}>
-            <Code2 />
+          </ToolbarMenu>
+          <ToolBtn label="水平线" onClick={() => editor.chain().focus().setHorizontalRule().run()}>
+            <Minus />
           </ToolBtn>
-          <MenuPanel open={menu === 'code'} onClose={close}>
+          <ToolBtn
+            label="块引用"
+            active={editor.isActive('blockquote')}
+            onClick={() => editor.chain().focus().toggleBlockquote().run()}
+          >
+            <Quote />
+          </ToolBtn>
+          <ToolbarMenu
+            id="code"
+            label="代码"
+            icon={<Code2 />}
+            open={menu === 'code'}
+            onToggle={() => toggle('code')}
+            onClose={close}
+            menuClassName="author-rt-menu--wide"
+          >
             <MenuItem
               active={editor.isActive('code')}
               onClick={() => {
@@ -526,44 +753,117 @@ export function RichTextToolbar({
             >
               行内代码
             </MenuItem>
-            <MenuItem
-              active={editor.isActive('codeBlock')}
-              onClick={() => {
-                editor.chain().focus().toggleCodeBlock().run();
-                close();
-              }}
-            >
-              代码块
-            </MenuItem>
-          </MenuPanel>
+            <p className="author-rt-menu-empty">代码块语言</p>
+            {CODE_LANGUAGES.map((lang) => (
+              <MenuItem
+                key={lang.id}
+                active={editor.isActive('codeBlock', { language: lang.id })}
+                onClick={() => {
+                  if (editor.isActive('codeBlock')) {
+                    editor.chain().focus().updateAttributes('codeBlock', { language: lang.id }).run();
+                  } else {
+                    editor.chain().focus().toggleCodeBlock({ language: lang.id }).run();
+                  }
+                  close();
+                }}
+              >
+                {lang.label}
+              </MenuItem>
+            ))}
+            {editor.isActive('codeBlock') ? (
+              <MenuItem
+                onClick={() => {
+                  editor.chain().focus().toggleCodeBlock().run();
+                  close();
+                }}
+              >
+                取消代码块
+              </MenuItem>
+            ) : null}
+          </ToolbarMenu>
+          <ToolbarMenu
+            id="table"
+            label="表格"
+            icon={<Table />}
+            open={menu === 'table'}
+            active={editor.isActive('table') || menu === 'table'}
+            onToggle={() => toggle('table')}
+            onClose={close}
+          >
+            {editor.isActive('table') ? (
+              <>
+                <MenuItem
+                  onClick={() => {
+                    editor.chain().focus().addColumnAfter().run();
+                    close();
+                  }}
+                >
+                  在右侧加列
+                </MenuItem>
+                <MenuItem
+                  onClick={() => {
+                    editor.chain().focus().addRowAfter().run();
+                    close();
+                  }}
+                >
+                  在下方加行
+                </MenuItem>
+                <MenuItem
+                  onClick={() => {
+                    editor.chain().focus().deleteColumn().run();
+                    close();
+                  }}
+                >
+                  删除当前列
+                </MenuItem>
+                <MenuItem
+                  onClick={() => {
+                    editor.chain().focus().deleteRow().run();
+                    close();
+                  }}
+                >
+                  删除当前行
+                </MenuItem>
+                <MenuItem
+                  onClick={() => {
+                    editor.chain().focus().deleteTable().run();
+                    close();
+                  }}
+                >
+                  删除整个表格
+                </MenuItem>
+              </>
+            ) : (
+              <TableSizePicker
+                onPick={(rows, cols) => {
+                  editor.chain().focus().insertTable({ rows, cols, withHeaderRow: true }).run();
+                  close();
+                }}
+              />
+            )}
+          </ToolbarMenu>
         </div>
-        <ToolBtn
-          label="表格"
-          active={editor.isActive('table')}
-          onClick={() =>
-            editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
-          }
-        >
-          <Table />
-        </ToolBtn>
-      </div>
 
-      <div className="author-rt-group">
-        <div className="author-rt-tool-wrap">
-          <ToolBtn
+        <div className="author-rt-group">
+          <ToolbarMenu
+            id="image"
             label="图像"
+            icon={<ImageIcon />}
+            open={menu === 'image'}
             active={menu === 'image'}
             disabled={uploading}
-            onClick={() => toggle('image')}
+            onToggle={() => toggle('image')}
+            onClose={close}
           >
-            <ImageIcon />
-          </ToolBtn>
-          <MenuPanel open={menu === 'image'} onClose={close}>
-            <MenuItem onClick={() => fileRef.current?.click()}>
+            <MenuItem
+              onClick={() => {
+                fileRef.current?.click();
+              }}
+            >
               {uploading ? '上传中…' : '上传图片'}
             </MenuItem>
             <MenuItem onClick={insertImageByUrl}>图片链接</MenuItem>
-          </MenuPanel>
+          </ToolbarMenu>
           <input
             ref={fileRef}
             type="file"
@@ -575,21 +875,25 @@ export function RichTextToolbar({
               e.target.value = '';
             }}
           />
-        </div>
-        <ToolBtn label="视频" onClick={insertVideo}>
-          <Video />
-        </ToolBtn>
-        <ToolBtn label="链接" active={editor.isActive('link')} onClick={setLink}>
-          <Link2 />
-        </ToolBtn>
-      </div>
-
-      <div className={cn('author-rt-group', !editor.isActive('table') && 'author-rt-group--last')}>
-        <div className="author-rt-tool-wrap">
-          <ToolBtn label="目录" active={menu === 'toc'} onClick={() => toggle('toc')}>
-            <ListTree />
+          <ToolBtn label="视频" onClick={insertVideo}>
+            <Video />
           </ToolBtn>
-          <MenuPanel open={menu === 'toc'} onClose={close} className="author-rt-menu--wide">
+          <ToolBtn label="链接" active={editor.isActive('link')} onClick={setLink}>
+            <Link2 />
+          </ToolBtn>
+        </div>
+
+        <div className="author-rt-group author-rt-group--last">
+          <ToolbarMenu
+            id="toc"
+            label="目录"
+            icon={<ListTree />}
+            open={menu === 'toc'}
+            onToggle={() => toggle('toc')}
+            onClose={close}
+            align="end"
+            menuClassName="author-rt-menu--wide"
+          >
             <MenuItem onClick={insertToc}>插入目录</MenuItem>
             {headings.length === 0 ? (
               <p className="author-rt-menu-empty">暂无标题</p>
@@ -598,11 +902,7 @@ export function RichTextToolbar({
                 <MenuItem
                   key={`${h.pos}-${i}`}
                   onClick={() => {
-                    editor
-                      .chain()
-                      .focus()
-                      .setTextSelection(h.pos + 1)
-                      .run();
+                    editor.chain().focus().setTextSelection(h.pos + 1).run();
                     close();
                   }}
                 >
@@ -612,41 +912,9 @@ export function RichTextToolbar({
                 </MenuItem>
               ))
             )}
-          </MenuPanel>
+          </ToolbarMenu>
         </div>
-        <ToolBtn label={wide ? '收起' : '宽屏'} active={wide} onClick={onToggleWide}>
-          {wide ? <Minimize2 /> : <Maximize2 />}
-        </ToolBtn>
       </div>
-
-      {editor.isActive('table') ? (
-        <div className="author-rt-group author-rt-group--table author-rt-group--last">
-          <Button
-            type="button"
-            variant="ghost"
-            size="xs"
-            onClick={() => editor.chain().focus().addColumnAfter().run()}
-          >
-            加列
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="xs"
-            onClick={() => editor.chain().focus().addRowAfter().run()}
-          >
-            加行
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="xs"
-            onClick={() => editor.chain().focus().deleteTable().run()}
-          >
-            删表
-          </Button>
-        </div>
-      ) : null}
     </div>
   );
 }

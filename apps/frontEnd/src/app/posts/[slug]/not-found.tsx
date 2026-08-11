@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 export default function PostNotFound() {
   return (
-    <div className="mx-auto max-w-3xl px-4 py-24 text-center">
+    <div className="mx-auto max-w-3xl py-24 text-center">
       <h1 className="font-serif text-3xl">未找到文章</h1>
       <p className="mt-3 text-ink-muted dark:text-zinc-400">
         这篇文章不存在，或尚未发布。

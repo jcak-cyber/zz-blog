@@ -29,14 +29,14 @@ export default function AuthorPage() {
 
   if (loading || !user) {
     return (
-      <div className="mx-auto max-w-md px-4 py-20 text-center text-sm text-[var(--ink-faint)]">
+      <div className="mx-auto max-w-md py-20 text-center text-sm text-[var(--ink-faint)]">
         正在进入作者入口…
       </div>
     );
   }
 
   return (
-    <div className="px-4 py-16 md:py-20">
+    <div className="py-16 md:py-20">
       <AuthorEntry user={user} />
     </div>
   );

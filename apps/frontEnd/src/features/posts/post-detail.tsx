@@ -20,7 +20,7 @@ export function PostDetailView({ post, content }: { post: PostDetail; content: R
   const cover = resolveMediaUrl(post.coverImageUrl);
 
   return (
-    <article className="mx-auto max-w-3xl px-4 py-10 md:py-16">
+    <article className="mx-auto max-w-3xl py-10 md:py-16">
       <Link
         href="/"
         className="text-sm text-ink-muted transition hover:text-accent dark:text-zinc-400"

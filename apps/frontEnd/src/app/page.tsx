@@ -18,7 +18,7 @@ export default async function HomePage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 pb-28">
+    <div className="pb-28">
       <section className="hero-band animate-rise relative mt-4 overflow-hidden px-6 py-10 md:mt-8 md:px-10 md:py-14">
         <div className="relative z-[1] grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
           <div>

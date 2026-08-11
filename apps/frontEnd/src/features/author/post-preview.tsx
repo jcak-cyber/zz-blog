@@ -5,6 +5,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize from 'rehype-sanitize';
+import rehypeHighlight from 'rehype-highlight';
 import { resolveMediaUrl } from '@/lib/media';
 import { authorHtmlSanitizeSchema } from '@/lib/markdown-sanitize';
 import { ImageLightbox } from '@/components/image-lightbox';
@@ -29,6 +30,13 @@ export function PostPreview({ title, excerpt, coverImageUrl, content, mode }: Pr
   const MarkdownImage = (props: ImgHTMLAttributes<HTMLImageElement>) => {
     const src = typeof props.src === 'string' ? props.src : '';
     const resolved = resolveMediaUrl(src) ?? src;
+    const width =
+      typeof props.width === 'number'
+        ? props.width
+        : typeof props.width === 'string'
+          ? Number.parseInt(props.width, 10)
+          : undefined;
+    const sized = Number.isFinite(width) && (width as number) > 0;
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
@@ -36,6 +44,10 @@ export function PostPreview({ title, excerpt, coverImageUrl, content, mode }: Pr
         src={resolved}
         alt={props.alt ?? ''}
         className="cursor-zoom-in rounded-sm"
+        style={{
+          ...(typeof props.style === 'object' && props.style ? props.style : {}),
+          ...(sized ? { width: width as number, maxWidth: '100%', height: 'auto' } : null),
+        }}
         onClick={() => openLightbox(resolved)}
       />
     );
@@ -81,7 +93,11 @@ export function PostPreview({ title, excerpt, coverImageUrl, content, mode }: Pr
       <p className="author-preview-label">正文预览</p>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeRaw, [rehypeSanitize, authorHtmlSanitizeSchema]]}
+        rehypePlugins={[
+          rehypeRaw,
+          [rehypeHighlight, { detect: true, ignoreMissing: true }],
+          [rehypeSanitize, authorHtmlSanitizeSchema],
+        ]}
         components={{ img: MarkdownImage }}
       >
         {content.trim() || '*开始书写，预览将显示在这里*'}

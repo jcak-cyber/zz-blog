@@ -31,7 +31,7 @@ export default function LoginPage() {
 
   if (checking) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-24 text-center" role="status" aria-live="polite">
+    <div className="mx-auto max-w-lg py-24 text-center" role="status" aria-live="polite">
         <p className="font-brush text-2xl text-[var(--ink-muted)]">墨迹未干…</p>
         <p className="mt-2 text-sm text-[var(--ink-faint)]">正在确认登录状态</p>
       </div>
@@ -39,7 +39,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl animate-rise px-4 pb-20 pt-4 md:pt-8">
+    <div className="mx-auto max-w-5xl animate-rise pb-20 pt-4 md:pt-8">
       <div className="grid overflow-hidden border border-[var(--line)] shadow-[0_24px_48px_-36px_rgba(16,23,20,0.45)] md:grid-cols-[0.95fr_1.05fr]">
         <aside className="hero-band relative flex min-h-[220px] flex-col justify-between px-7 py-8 md:min-h-[440px] md:px-9 md:py-10">
           <div className="relative z-[1]">

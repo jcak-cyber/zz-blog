@@ -78,11 +78,20 @@ export class PostsService {
   }
 
   async getPublishedBySlug(slug: string) {
-    const post = await this.postsRepository.findPublishedBySlug(slug);
-    if (!post) {
-      throw new NotFoundException('未找到文章');
+    const candidates = new Set<string>([slug]);
+    try {
+      const once = decodeURIComponent(slug);
+      candidates.add(once);
+      candidates.add(decodeURIComponent(once));
+    } catch {
+      /* ignore malformed encoding */
     }
-    return mapDetail(post);
+
+    for (const candidate of candidates) {
+      const post = await this.postsRepository.findPublishedBySlug(candidate);
+      if (post) return mapDetail(post);
+    }
+    throw new NotFoundException('未找到文章');
   }
 
   private async resolveAuthorId() {

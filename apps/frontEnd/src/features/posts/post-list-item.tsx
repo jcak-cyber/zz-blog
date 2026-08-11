@@ -46,8 +46,8 @@ export function PostListItem({
 
   if (variant === 'featured') {
     return (
-      <article className={`group relative animate-rise ${delayClass}`}>
-        <div className="pointer-events-none absolute -left-2 -top-10 watermark-index md:-left-6">
+      <article className={`group relative overflow-x-clip animate-rise ${delayClass}`}>
+        <div className="pointer-events-none absolute left-1 -top-8 watermark-index">
           {indexLabel(index)}
         </div>
         <Link

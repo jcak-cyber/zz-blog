@@ -10,15 +10,57 @@ import { Color } from '@tiptap/extension-color';
 import Highlight from '@tiptap/extension-highlight';
 import TextAlign from '@tiptap/extension-text-align';
 import Underline from '@tiptap/extension-underline';
-import Image from '@tiptap/extension-image';
+import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import { Table } from '@tiptap/extension-table';
-import { TableRow } from '@tiptap/extension-table-row';
 import { TableCell } from '@tiptap/extension-table-cell';
 import { TableHeader } from '@tiptap/extension-table-header';
 import Youtube from '@tiptap/extension-youtube';
+import { common, createLowlight } from 'lowlight';
 import { Markdown } from 'tiptap-markdown';
 import { cn } from '@/lib/utils';
 import { RichTextToolbar } from './rich-text-toolbar';
+import { ResizableImage } from './resizable-image';
+import { ResizableTableRow, TableRowResize } from './table-row-resize';
+
+const lowlight = createLowlight(common);
+lowlight.registerAlias({
+  xml: ['html', 'xhtml'],
+  bash: ['sh', 'zsh'],
+  typescript: ['ts'],
+  javascript: ['js'],
+});
+
+/** 默认语言 javascript，确保新建/无语言代码块也能高亮 */
+const HighlightedCodeBlock = CodeBlockLowlight.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      language: {
+        default: 'javascript',
+        parseHTML: (element) => {
+          const prefix = this.options.languageClassPrefix || 'language-';
+          const classNames = [...(element.firstElementChild?.classList || [])];
+          const languages = classNames
+            .filter((className) => className.startsWith(prefix))
+            .map((className) => className.slice(prefix.length));
+          const language = languages[0];
+          if (!language || language === 'null' || language === 'plaintext') {
+            return 'javascript';
+          }
+          return language;
+        },
+        rendered: false,
+      },
+    };
+  },
+}).configure({
+  lowlight,
+  defaultLanguage: 'javascript',
+  languageClassPrefix: 'language-',
+  HTMLAttributes: {
+    class: 'author-code-block',
+  },
+});
 
 type Props = {
   value: string;
@@ -45,7 +87,6 @@ const MAX_HISTORY = 12;
 export function RichTextEditor({ value, onChange, className }: Props) {
   const emitting = useRef(false);
   const [, setTick] = useState(0);
-  const [wide, setWide] = useState(false);
   const [historyItems, setHistoryItems] = useState<HistoryItem[]>([]);
   const lastSnap = useRef('');
   const snapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -55,6 +96,7 @@ export function RichTextEditor({ value, onChange, className }: Props) {
     extensions: [
       StarterKit.configure({
         heading: { levels: [1, 2, 3] },
+        codeBlock: false,
       }),
       TextStyle,
       Color,
@@ -68,14 +110,18 @@ export function RichTextEditor({ value, onChange, className }: Props) {
         autolink: true,
         HTMLAttributes: { rel: 'noopener noreferrer', target: '_blank' },
       }),
-      Image.configure({
-        allowBase64: false,
-        HTMLAttributes: { class: 'author-rich-image' },
+      ResizableImage,
+      HighlightedCodeBlock,
+      Table.configure({
+        resizable: true,
+        allowTableNodeSelection: true,
+        lastColumnResizable: true,
+        cellMinWidth: 64,
       }),
-      Table.configure({ resizable: false }),
-      TableRow,
+      ResizableTableRow,
       TableHeader,
       TableCell,
+      TableRowResize,
       Youtube.configure({
         controls: true,
         nocookie: true,
@@ -147,20 +193,6 @@ export function RichTextEditor({ value, onChange, className }: Props) {
   }, [value, editor]);
 
   useEffect(() => {
-    if (!wide) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setWide(false);
-    };
-    document.addEventListener('keydown', onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.removeEventListener('keydown', onKey);
-      document.body.style.overflow = prev;
-    };
-  }, [wide]);
-
-  useEffect(() => {
     return () => {
       if (snapTimer.current) clearTimeout(snapTimer.current);
     };
@@ -186,11 +218,9 @@ export function RichTextEditor({ value, onChange, className }: Props) {
   }
 
   return (
-    <div className={cn('author-rich-editor', wide && 'author-rich-editor--wide', className)}>
+    <div className={cn('author-rich-editor', className)}>
       <RichTextToolbar
         editor={editor}
-        wide={wide}
-        onToggleWide={() => setWide((v) => !v)}
         historyItems={historyItems}
         onRestoreHistory={restoreHistory}
       />
