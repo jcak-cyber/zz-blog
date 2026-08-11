@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { uploadCover } from '@/lib/author-posts';
+import { deleteUpload, isLocalUploadUrl, uploadCover } from '@/lib/author-posts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,6 +26,8 @@ type Props = {
   onCoverChange: (v: string) => void;
   onTagInputChange: (v: string) => void;
   onCategoryChange: (v: string) => void;
+  /** 移除封面并删除文件后回调（编辑态可顺带落库清空） */
+  onCoverRemoved?: () => void | Promise<void>;
 };
 
 export function PostMetaFields({
@@ -38,22 +40,50 @@ export function PostMetaFields({
   onCoverChange,
   onTagInputChange,
   onCategoryChange,
+  onCoverRemoved,
 }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [removing, setRemoving] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
   async function onFile(file: File | undefined) {
     if (!file) return;
     setUploading(true);
     setUploadError(null);
+    const previous = coverImageUrl;
     try {
       const res = await uploadCover(file);
       onCoverChange(res.url);
+      // 替换封面时尽量清理旧的本站上传文件
+      if (previous && isLocalUploadUrl(previous) && previous !== res.url) {
+        void deleteUpload(previous).catch(() => undefined);
+      }
     } catch (e) {
       setUploadError(e instanceof Error ? e.message : '上传失败');
     } finally {
       setUploading(false);
+      if (fileRef.current) fileRef.current.value = '';
+    }
+  }
+
+  async function onRemoveCover() {
+    if (!coverImageUrl) return;
+    setRemoving(true);
+    setUploadError(null);
+    const current = coverImageUrl;
+    onCoverChange('');
+    try {
+      if (isLocalUploadUrl(current)) {
+        await deleteUpload(current);
+      }
+      await onCoverRemoved?.();
+    } catch (e) {
+      setUploadError(e instanceof Error ? e.message : '删除失败');
+      onCoverChange(current);
+    } finally {
+      setRemoving(false);
+      if (fileRef.current) fileRef.current.value = '';
     }
   }
 
@@ -90,15 +120,28 @@ export function PostMetaFields({
           className="sr-only"
           onChange={(e) => onFile(e.target.files?.[0])}
         />
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          disabled={uploading}
-          onClick={() => fileRef.current?.click()}
-        >
-          {uploading ? '上传中…' : '选择图片'}
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            disabled={uploading || removing}
+            onClick={() => fileRef.current?.click()}
+          >
+            {uploading ? '上传中…' : '选择图片'}
+          </Button>
+          {coverImageUrl ? (
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              disabled={uploading || removing}
+              onClick={onRemoveCover}
+            >
+              {removing ? '移除中…' : '移除封面'}
+            </Button>
+          ) : null}
+        </div>
         {uploadError ? (
           <p className="text-sm text-destructive" role="alert">
             {uploadError}

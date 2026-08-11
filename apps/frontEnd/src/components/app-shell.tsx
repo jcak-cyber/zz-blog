@@ -10,10 +10,7 @@ function isAuthorWorkspace(pathname: string) {
 }
 
 function isAuthorDesk(pathname: string) {
-  return (
-    pathname === '/author/posts/new' ||
-    /^\/author\/posts\/[^/]+\/edit$/.test(pathname)
-  );
+  return pathname === '/author/posts/new' || /^\/author\/posts\/[^/]+\/edit$/.test(pathname);
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -32,7 +29,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <header
         className={cn(
           'site-header mx-auto flex w-full items-center justify-between gap-4 px-4',
-          desk ? 'max-w-[1400px] py-3' : 'max-w-6xl pb-3 pt-8',
+          desk ? 'max-w-[1720px] py-3' : 'max-w-6xl pb-3 pt-8',
         )}
       >
         <a

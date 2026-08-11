@@ -16,11 +16,10 @@ import {
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { suggestSlugFromTitle } from './slug-suggest';
-import { MarkdownToolbar } from './markdown-toolbar';
+import { RichTextEditor } from './rich-text-editor';
 import { PostMetaFields } from './post-meta-fields';
 import { PostPreview } from './post-preview';
 
@@ -46,24 +45,20 @@ function toLocalInputValue(iso: string | null | undefined) {
 
 export function PostEditor({ mode, initial }: Props) {
   const router = useRouter();
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const slugTouched = useRef(Boolean(initial?.slug));
   const [title, setTitle] = useState(initial?.title ?? '');
   const [slug, setSlug] = useState(initial?.slug ?? '');
   const [content, setContent] = useState(initial?.content ?? '');
   const [excerpt, setExcerpt] = useState(initial?.excerpt ?? '');
   const [coverImageUrl, setCoverImageUrl] = useState(initial?.coverImageUrl ?? '');
-  const [tagInput, setTagInput] = useState(
-    initial?.tags?.map((t) => t.name).join(', ') ?? '',
-  );
+  const [tagInput, setTagInput] = useState(initial?.tags?.map((t) => t.name).join(', ') ?? '');
   const [categoryId, setCategoryId] = useState(initial?.categoryId ?? '');
   const [categories, setCategories] = useState<Array<{ id: string; name: string; slug: string }>>(
     [],
   );
-  const [scheduledLocal, setScheduledLocal] = useState(
-    toLocalInputValue(initial?.scheduledAt),
-  );
+  const [scheduledLocal, setScheduledLocal] = useState(toLocalInputValue(initial?.scheduledAt));
   const [confirmSlugChange, setConfirmSlugChange] = useState(false);
+  const [slugExpanded, setSlugExpanded] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState<string | null>(null);
@@ -92,24 +87,6 @@ export function PostEditor({ mode, initial }: Props) {
     if (!slugTouched.current && !slugLocked) {
       setSlug(suggestSlugFromTitle(value));
     }
-  }
-
-  function insertMarkdown(before: string, after = '') {
-    const el = textareaRef.current;
-    if (!el) {
-      setContent((c) => `${c}${before}${after}`);
-      return;
-    }
-    const start = el.selectionStart;
-    const end = el.selectionEnd;
-    const selected = content.slice(start, end);
-    const next = content.slice(0, start) + before + selected + after + content.slice(end);
-    setContent(next);
-    requestAnimationFrame(() => {
-      el.focus();
-      const pos = start + before.length + selected.length + after.length;
-      el.setSelectionRange(pos, pos);
-    });
   }
 
   function payload(action: AuthorPostAction) {
@@ -165,7 +142,9 @@ export function PostEditor({ mode, initial }: Props) {
         router.refresh();
       }
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : '操作失败');
+      const msg = e instanceof ApiError ? e.message : e instanceof Error ? e.message : '操作失败';
+      setError(msg);
+      if (/slug|别名|网址/i.test(msg)) setSlugExpanded(true);
     } finally {
       setPending(null);
     }
@@ -221,7 +200,10 @@ export function PostEditor({ mode, initial }: Props) {
               {error ?? message}
             </p>
           )}
-          <Link href="/author/posts" className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}>
+          <Link
+            href="/author/posts"
+            className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}
+          >
             我的文章
           </Link>
           <Button
@@ -267,30 +249,54 @@ export function PostEditor({ mode, initial }: Props) {
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="font-normal text-[var(--ink-muted)]">
-                URL 别名（slug）
-                {slugLocked ? ' · 已锁定' : ''}
-              </Label>
-              <Input
-                value={slug}
-                disabled={slugLocked}
-                onChange={(e) => {
-                  slugTouched.current = true;
-                  setSlug(e.target.value);
-                }}
-                placeholder="my-post"
-                className="h-9 rounded-sm bg-[color-mix(in_srgb,var(--paper)_55%,transparent)]"
-              />
+              <div className="flex items-center justify-between gap-2">
+                <Label className="font-normal text-[var(--ink-muted)]">
+                  网址
+                  {slugLocked ? ' · 已锁定' : ''}
+                </Label>
+                <button
+                  type="button"
+                  className="shrink-0 text-xs text-[var(--ink-muted)] underline-offset-2 hover:text-[var(--accent)] hover:underline"
+                  onClick={() => setSlugExpanded((v) => !v)}
+                >
+                  {slugExpanded ? '收起' : '自定义'}
+                </button>
+              </div>
+              {!slugExpanded ? (
+                <p
+                  className="truncate rounded-sm border border-[var(--line)] bg-[color-mix(in_srgb,var(--paper)_35%,transparent)] px-2.5 py-2 font-mono text-xs text-[var(--ink-muted)]"
+                  title={slug ? `/posts/${slug}` : '随标题自动生成'}
+                >
+                  {slug ? `/posts/${slug}` : '随标题自动生成'}
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  <Input
+                    value={slug}
+                    disabled={slugLocked}
+                    onChange={(e) => {
+                      slugTouched.current = true;
+                      setSlug(e.target.value);
+                    }}
+                    placeholder="my-post"
+                    className="h-9 rounded-sm bg-[color-mix(in_srgb,var(--paper)_55%,transparent)] font-mono text-sm"
+                  />
+                  {initial?.slugLocked ? (
+                    <label className="flex items-center gap-2 text-xs text-[var(--ink-muted)]">
+                      <Checkbox
+                        checked={confirmSlugChange}
+                        onCheckedChange={(v) => setConfirmSlugChange(v === true)}
+                      />
+                      确认修改已公开文章的网址（旧链接将失效）
+                    </label>
+                  ) : (
+                    <p className="text-[11px] leading-snug text-[var(--ink-muted)]">
+                      公开地址为 /posts/别名；未自定义时随标题自动更新。
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
-            {initial?.slugLocked ? (
-              <label className="flex items-center gap-2 text-xs text-[var(--ink-muted)]">
-                <Checkbox
-                  checked={confirmSlugChange}
-                  onCheckedChange={(v) => setConfirmSlugChange(v === true)}
-                />
-                确认修改已公开文章的 slug
-              </label>
-            ) : null}
 
             <PostMetaFields
               excerpt={excerpt}
@@ -302,6 +308,21 @@ export function PostEditor({ mode, initial }: Props) {
               onCoverChange={setCoverImageUrl}
               onTagInputChange={setTagInput}
               onCategoryChange={setCategoryId}
+              onCoverRemoved={
+                mode === 'edit' && initial
+                  ? async () => {
+                      await updateAuthorPost(initial.id, {
+                        title,
+                        slug,
+                        content,
+                        excerpt: excerpt || null,
+                        coverImageUrl: null,
+                        tagNames: parseTags(tagInput),
+                        categoryId: categoryId || null,
+                      });
+                    }
+                  : undefined
+              }
             />
 
             <div className="space-y-1.5">
@@ -342,15 +363,7 @@ export function PostEditor({ mode, initial }: Props) {
         </aside>
 
         <section className="author-col author-col--write">
-          <MarkdownToolbar onInsert={insertMarkdown} />
-          <Textarea
-            ref={textareaRef}
-            className="author-md-input min-h-0 flex-1 resize-none rounded-sm border-input bg-[color-mix(in_srgb,var(--paper)_55%,transparent)] font-serif text-[0.95rem] leading-[1.8]"
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder="用 Markdown 写下正文…"
-            spellCheck={false}
-          />
+          <RichTextEditor value={content} onChange={setContent} />
           <p className="author-wordcount">字数（不含空白）：{wordCount}</p>
         </section>
 

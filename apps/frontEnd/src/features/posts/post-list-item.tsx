@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import type { PostSummary } from '@/lib/posts';
+import { resolveMediaUrl } from '@/lib/media';
 
 function formatDate(value: string) {
   try {
@@ -12,16 +13,6 @@ function formatDate(value: string) {
   } catch {
     return value;
   }
-}
-
-function resolveMediaUrl(url?: string | null) {
-  if (!url) return null;
-  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
-    return url;
-  }
-  const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:4000/api/v1';
-  const origin = apiBase.replace(/\/api\/v1\/?$/, '');
-  return `${origin}${url.startsWith('/') ? url : `/${url}`}`;
 }
 
 function indexLabel(index: number) {
@@ -59,7 +50,10 @@ export function PostListItem({
         <div className="pointer-events-none absolute -left-2 -top-10 watermark-index md:-left-6">
           {indexLabel(index)}
         </div>
-        <Link href={`/posts/${post.slug}`} className="post-panel relative block overflow-hidden p-3 md:p-4">
+        <Link
+          href={`/posts/${post.slug}`}
+          className="post-panel relative block overflow-hidden p-3 md:p-4"
+        >
           <div className="grid gap-5 lg:grid-cols-[1.35fr_1fr] lg:gap-8">
             <div
               className={`cover-reveal relative min-h-[240px] overflow-hidden md:min-h-[340px] ${
@@ -113,7 +107,10 @@ export function PostListItem({
   if (variant === 'tall' || variant === 'tile') {
     return (
       <article className={`group h-full animate-rise ${delayClass}`}>
-        <Link href={`/posts/${post.slug}`} className="post-panel flex h-full flex-col overflow-hidden">
+        <Link
+          href={`/posts/${post.slug}`}
+          className="post-panel flex h-full flex-col overflow-hidden"
+        >
           <div
             className={`relative overflow-hidden ${
               variant === 'tall' ? 'aspect-[3/4] min-h-[280px]' : 'aspect-[16/11]'
@@ -164,7 +161,9 @@ export function PostListItem({
           reverse ? 'md:[&>div:first-child]:order-2' : ''
         }`}
       >
-        <div className={`relative min-h-[200px] overflow-hidden md:min-h-[240px] ${cover ? '' : tone}`}>
+        <div
+          className={`relative min-h-[200px] overflow-hidden md:min-h-[240px] ${cover ? '' : tone}`}
+        >
           {cover ? (
             <Image
               src={cover}

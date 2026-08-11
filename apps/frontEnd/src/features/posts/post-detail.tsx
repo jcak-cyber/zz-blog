@@ -2,6 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import type { PostDetail } from '@/lib/posts';
+import { resolveMediaUrl } from '@/lib/media';
 
 function formatDate(value: string) {
   try {
@@ -15,21 +16,7 @@ function formatDate(value: string) {
   }
 }
 
-function resolveMediaUrl(url?: string | null) {
-  if (!url) return null;
-  if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:4000/api/v1';
-  const origin = apiBase.replace(/\/api\/v1\/?$/, '');
-  return `${origin}${url.startsWith('/') ? url : `/${url}`}`;
-}
-
-export function PostDetailView({
-  post,
-  content,
-}: {
-  post: PostDetail;
-  content: ReactNode;
-}) {
+export function PostDetailView({ post, content }: { post: PostDetail; content: ReactNode }) {
   const cover = resolveMediaUrl(post.coverImageUrl);
 
   return (

@@ -57,9 +57,24 @@ async function parseError(res: Response): Promise<string> {
   return message;
 }
 
+async function refreshAccessCookie(): Promise<boolean> {
+  try {
+    const res = await fetch(`${browserApiBase()}/auth/refresh`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { accept: 'application/json' },
+      cache: 'no-store',
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 async function authorFetch<T>(
   path: string,
   init?: RequestInit & { emptyResponse?: boolean },
+  retried = false,
 ): Promise<T> {
   const { emptyResponse, ...rest } = init ?? {};
   const res = await fetch(`${browserApiBase()}${path.startsWith('/') ? path : `/${path}`}`, {
@@ -74,6 +89,11 @@ async function authorFetch<T>(
     },
     cache: 'no-store',
   });
+
+  if (res.status === 401 && !retried) {
+    const ok = await refreshAccessCookie();
+    if (ok) return authorFetch<T>(path, init, true);
+  }
 
   if (!res.ok) {
     throw new ApiError(await parseError(res), res.status);
@@ -142,4 +162,26 @@ export async function uploadCover(file: File) {
     method: 'POST',
     body: form,
   });
+}
+
+/** 删除本站上传文件（/uploads/...）；外链仅前端清空即可 */
+export async function deleteUpload(url: string) {
+  return authorFetch<void>('/uploads', {
+    method: 'DELETE',
+    body: JSON.stringify({ url }),
+    emptyResponse: true,
+  });
+}
+
+export function isLocalUploadUrl(url?: string | null) {
+  if (!url) return false;
+  try {
+    if (url.startsWith('/uploads/')) return true;
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return new URL(url).pathname.startsWith('/uploads/');
+    }
+  } catch {
+    return false;
+  }
+  return false;
 }

@@ -81,7 +81,7 @@ export function PostList({ items: initial }: Props) {
             <div className="author-list-actions">
               <Link
                 href={`/author/posts/${post.id}/edit`}
-                className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}
+                className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
               >
                 编辑
               </Link>

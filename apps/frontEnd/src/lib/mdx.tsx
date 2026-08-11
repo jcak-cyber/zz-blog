@@ -1,7 +1,9 @@
 import { compileMDX } from 'next-mdx-remote/rsc';
 import remarkGfm from 'remark-gfm';
 import rehypeSlug from 'rehype-slug';
+import rehypeSanitize from 'rehype-sanitize';
 import type { ReactNode } from 'react';
+import { authorHtmlSanitizeSchema } from '@/lib/markdown-sanitize';
 
 const components = {
   img: (props: React.ImgHTMLAttributes<HTMLImageElement>) => (
@@ -17,7 +19,7 @@ export async function renderPostMarkdown(source: string): Promise<ReactNode> {
     options: {
       mdxOptions: {
         remarkPlugins: [remarkGfm],
-        rehypePlugins: [rehypeSlug],
+        rehypePlugins: [[rehypeSanitize, authorHtmlSanitizeSchema], rehypeSlug],
       },
     },
   });

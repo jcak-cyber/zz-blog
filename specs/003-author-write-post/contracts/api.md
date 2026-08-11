@@ -96,6 +96,13 @@
 - **201**: `{ "url": string, ... }`  
 - 作者编辑器使用返回的 `url` 写入 `coverImageUrl`
 
+### DELETE `/uploads`
+
+- **Auth**: Auth（JWT）**或** import-token  
+- **Body**: `{ "url": "/uploads/<uuid>.<ext>" }`  
+- **204**: 删除成功（文件不存在也视为成功）  
+- **400**: 非本站上传路径 / 非法路径  
+
 ---
 
 ## 前端页面合同（验收）
