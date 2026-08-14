@@ -5,11 +5,15 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import type { AuthUser } from '@/lib/auth';
 import { logout } from '@/lib/auth';
+import { useAuth } from '@/features/auth/auth-provider';
+import { useNavigationLoading } from '@/features/navigation/navigation-provider';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 export function AuthorEntry({ user }: { user: AuthUser }) {
   const router = useRouter();
+  const { setUser } = useAuth();
+  const { startNavigating } = useNavigationLoading();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -18,6 +22,8 @@ export function AuthorEntry({ user }: { user: AuthUser }) {
     setError(null);
     try {
       await logout();
+      setUser(null);
+      startNavigating();
       router.replace('/login');
       router.refresh();
     } catch {
@@ -44,7 +50,7 @@ export function AuthorEntry({ user }: { user: AuthUser }) {
           <p className="text-xs tracking-[0.28em] text-[var(--ink-faint)]">SIGNED IN</p>
           <h2 className="font-brush mt-2 text-3xl tracking-tight">你已登录</h2>
           <p className="mt-4 text-[var(--ink-muted)]">
-            当前账号 <span className="text-[var(--ink)]">{user.email}</span>
+            当前账号 <span className="text-[var(--ink)]">{user.username}</span>
             {user.role ? (
               <span className="text-[var(--ink-faint)]"> · {user.role}</span>
             ) : null}

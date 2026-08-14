@@ -5,8 +5,8 @@ export class AuthUserDto {
   @ApiProperty()
   id!: string;
 
-  @ApiProperty()
-  email!: string;
+  @ApiProperty({ description: '登录与展示用用户名' })
+  username!: string;
 
   @ApiProperty({ enum: Role })
   role!: Role;

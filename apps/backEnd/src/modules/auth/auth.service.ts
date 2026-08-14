@@ -1,10 +1,11 @@
 import {
+  ConflictException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { Role } from '@prisma/client';
+import { Prisma, Role } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { CookieOptions, Response } from 'express';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -15,6 +16,7 @@ import {
 } from './auth.constants';
 import { AuthUserDto } from './dto/auth-user.dto';
 import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
 
 type RefreshPayload = {
   sub: string;
@@ -65,15 +67,15 @@ export class AuthService {
     };
   }
 
-  private toUserDto(user: { id: string; email: string; role: Role }): AuthUserDto {
-    return { id: user.id, email: user.email, role: user.role };
+  private toUserDto(user: { id: string; username: string; role: Role }): AuthUserDto {
+    return { id: user.id, username: user.username, role: user.role };
   }
 
-  private signAccess(user: { id: string; email: string; role: Role }) {
+  private signAccess(user: { id: string; username: string; role: Role }) {
     return this.jwt.sign(
       {
         sub: user.id,
-        email: user.email,
+        username: user.username,
         role: user.role,
         type: 'access' as const,
       },
@@ -94,7 +96,7 @@ export class AuthService {
     );
   }
 
-  setAuthCookies(res: Response, user: { id: string; email: string; role: Role }) {
+  setAuthCookies(res: Response, user: { id: string; username: string; role: Role }) {
     const access = this.signAccess(user);
     const refresh = this.signRefresh(user.id);
     res.cookie(
@@ -120,8 +122,32 @@ export class AuthService {
     res.clearCookie(REFRESH_COOKIE, base);
   }
 
+  async register(dto: RegisterDto): Promise<{ user: AuthUserDto }> {
+    const username = dto.username.trim();
+    const email = `${username.toLowerCase()}@users.local`;
+    const passwordHash = await bcrypt.hash(dto.password, 10);
+
+    try {
+      const user = await this.prisma.user.create({
+        data: {
+          username,
+          email,
+          passwordHash,
+          role: Role.AUTHOR,
+        },
+      });
+      return { user: this.toUserDto(user) };
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new ConflictException('用户名已被占用');
+      }
+      throw error;
+    }
+  }
+
   async login(dto: LoginDto, res: Response): Promise<{ user: AuthUserDto }> {
-    const user = await this.prisma.user.findUnique({ where: { email: dto.email.toLowerCase() } });
+    const username = dto.username.trim();
+    const user = await this.prisma.user.findUnique({ where: { username } });
     if (!user) {
       throw new UnauthorizedException(AUTH_ERRORS.INVALID_CREDENTIALS);
     }

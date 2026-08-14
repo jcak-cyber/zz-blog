@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils';
 import { RichTextToolbar } from './rich-text-toolbar';
 import { ResizableImage } from './resizable-image';
 import { ResizableTableRow, TableRowResize } from './table-row-resize';
+import { ParagraphSpacing } from './spaced-paragraph';
 
 const lowlight = createLowlight(common);
 lowlight.registerAlias({
@@ -98,6 +99,7 @@ export function RichTextEditor({ value, onChange, className }: Props) {
         heading: { levels: [1, 2, 3] },
         codeBlock: false,
       }),
+      ParagraphSpacing,
       TextStyle,
       Color,
       Highlight.configure({ multicolor: true }),

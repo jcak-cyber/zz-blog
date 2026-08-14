@@ -1,9 +1,12 @@
 'use client';
 
 import { FormEvent, useId, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ApiError } from '@/lib/api';
 import { login } from '@/lib/auth';
+import { useAuth } from '@/features/auth/auth-provider';
+import { useNavigationLoading } from '@/features/navigation/navigation-provider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,7 +22,7 @@ function mapLoginError(err: unknown): string {
       return '暂时无法登录，请稍后重试';
     }
     if (err.status === 400) {
-      return raw || '请检查账号与密码是否填写正确';
+      return raw || '请检查用户名与密码是否填写正确';
     }
     if (err.status === 401) {
       return raw || '账号或密码不正确';
@@ -31,26 +34,33 @@ function mapLoginError(err: unknown): string {
 
 export function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { setUser } = useAuth();
+  const { startNavigating } = useNavigationLoading();
   const errorId = useId();
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState(() => searchParams.get('username')?.trim() ?? '');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const registered = searchParams.get('registered') === '1';
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
 
-    if (!email.trim() || !password) {
-      setError('请填写账号和密码');
+    if (!username.trim() || !password) {
+      setError('请填写用户名和密码');
       return;
     }
 
     setPending(true);
     try {
-      await login(email.trim(), password);
-      router.replace('/author');
+      const { user } = await login(username.trim(), password);
+      setUser(user);
+      const next = searchParams.get('next');
+      startNavigating();
+      router.replace(next && next.startsWith('/') ? next : '/author');
       router.refresh();
     } catch (err) {
       setError(mapLoginError(err));
@@ -69,20 +79,28 @@ export function LoginForm() {
       aria-busy={pending}
       aria-describedby={error ? errorId : undefined}
     >
+      {registered ? (
+        <p
+          role="status"
+          className="border border-[color-mix(in_srgb,var(--accent)_35%,var(--line))] bg-[color-mix(in_srgb,var(--accent)_10%,transparent)] px-3 py-2 text-sm text-[var(--accent)]"
+        >
+          注册成功，请使用新账号登录。
+        </p>
+      ) : null}
+
       <div className="space-y-1.5">
-        <Label htmlFor="login-email" className="font-normal text-[var(--ink-muted)]">
-          账号
+        <Label htmlFor="login-username" className="font-normal text-[var(--ink-muted)]">
+          用户名
         </Label>
         <Input
-          id="login-email"
-          name="email"
-          type="email"
+          id="login-username"
+          name="username"
+          type="text"
           autoComplete="username"
-          inputMode="email"
           required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="你的邮箱"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          placeholder="你的用户名"
           aria-required="true"
           aria-invalid={invalid}
           aria-describedby={error ? errorId : undefined}
@@ -144,6 +162,13 @@ export function LoginForm() {
       <Button type="submit" disabled={pending} className="h-10 w-full tracking-wide" size="lg">
         {pending ? '登录中…' : '进入手稿室'}
       </Button>
+
+      <p className="text-center text-sm text-[var(--ink-muted)]">
+        还没有账号？{' '}
+        <Link href="/register" className="text-[var(--accent)] underline-offset-4 hover:underline">
+          前往注册
+        </Link>
+      </p>
     </form>
   );
 }

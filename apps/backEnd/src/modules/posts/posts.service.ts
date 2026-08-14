@@ -19,6 +19,7 @@ function mapSummary(post: Awaited<ReturnType<PostsRepository['findAllPublishedSu
     coverImageUrl: post.coverImageUrl,
     publishedAt: post.publishedAt!,
     tags: post.tags.map((t) => ({ name: t.tag.name, slug: t.tag.slug })),
+    author: { id: post.author.id, username: post.author.username },
   };
 }
 
@@ -38,6 +39,7 @@ function mapDetail(
     category: post.category
       ? { name: post.category.name, slug: post.category.slug }
       : null,
+    author: { id: post.author.id, username: post.author.username },
   };
 }
 

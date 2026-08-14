@@ -13,7 +13,7 @@ import { AuthUserDto } from '../../modules/auth/dto/auth-user.dto';
 
 type AccessPayload = {
   sub: string;
-  email: string;
+  username: string;
   role: Role;
   type: 'access';
 };
@@ -53,7 +53,7 @@ export class UploadAuthGuard implements CanActivate {
       if (payload.role !== Role.ADMIN && payload.role !== Role.AUTHOR) return false;
       request.user = {
         id: payload.sub,
-        email: payload.email,
+        username: payload.username,
         role: payload.role,
       };
       return true;

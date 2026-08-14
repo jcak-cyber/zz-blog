@@ -3,24 +3,28 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { PostEditor } from '@/features/author/post-editor';
-import { fetchMe } from '@/lib/auth';
+import { useAuth } from '@/features/auth/auth-provider';
+import { useNavigationLoading } from '@/features/navigation/navigation-provider';
 import { getAuthorPost, type AuthorPostDetail } from '@/lib/author-posts';
 
 export default function EditAuthorPostPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
+  const { ready, user } = useAuth();
+  const { startNavigating } = useNavigationLoading();
   const [post, setPost] = useState<AuthorPostDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!ready) return;
+    if (!user) {
+      startNavigating();
+      router.replace('/login');
+      return;
+    }
+
     let cancelled = false;
     (async () => {
-      const me = await fetchMe();
-      if (cancelled) return;
-      if (!me) {
-        router.replace('/login');
-        return;
-      }
       try {
         const detail = await getAuthorPost(params.id);
         if (!cancelled) setPost(detail);
@@ -31,7 +35,11 @@ export default function EditAuthorPostPage() {
     return () => {
       cancelled = true;
     };
-  }, [router, params.id]);
+  }, [ready, user, router, startNavigating, params.id]);
+
+  if (!ready || !user) {
+    return null;
+  }
 
   if (error) {
     return (
@@ -44,7 +52,7 @@ export default function EditAuthorPostPage() {
   if (!post) {
     return (
       <div className="author-page">
-        <p className="text-sm text-[var(--ink-faint)]">加载文章…</p>
+        <p className="text-sm text-[var(--ink-faint)]">加载中…</p>
       </div>
     );
   }

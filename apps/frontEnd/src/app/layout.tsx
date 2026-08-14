@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { ThemeProvider } from '@/components/theme-provider';
 import { AppShell } from '@/components/app-shell';
+import { AuthProvider } from '@/features/auth/auth-provider';
+import { NavigationProvider } from '@/features/navigation/navigation-provider';
 import '@/styles/globals.css';
 
 export const metadata: Metadata = {
@@ -17,15 +19,19 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="zh-CN" suppressHydrationWarning>
       <body>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <div className="bg-atmosphere" aria-hidden>
-            <div className="bg-grid" />
-            <div className="bg-blob-warm" />
-            <span className="orb orb-1" />
-            <span className="orb orb-2" />
-            <span className="orb orb-3" />
-            <div className="veil" />
-          </div>
-          <AppShell>{children}</AppShell>
+          <AuthProvider>
+            <NavigationProvider>
+              <div className="bg-atmosphere" aria-hidden>
+                <div className="bg-grid" />
+                <div className="bg-blob-warm" />
+                <span className="orb orb-1" />
+                <span className="orb orb-2" />
+                <span className="orb orb-3" />
+                <div className="veil" />
+              </div>
+              <AppShell>{children}</AppShell>
+            </NavigationProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

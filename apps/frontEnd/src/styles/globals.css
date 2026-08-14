@@ -214,7 +214,7 @@ body:has(.site-shell--desk) {
 }
 
 .site-shell--desk .site-header {
-  max-width: var(--site-max, 72rem);
+  max-width: none;
   width: 100%;
   margin-inline: auto;
   padding-inline: 0;
@@ -308,6 +308,142 @@ body:has(.site-shell--desk) {
 .site-nav-author:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+/* —— 全局登录态检查门闩 —— */
+@keyframes auth-gate-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes auth-gate-breathe {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes auth-gate-dot {
+  0%,
+  80%,
+  100% {
+    opacity: 0.25;
+    transform: translateY(0);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+}
+
+.auth-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background:
+    radial-gradient(
+      ellipse 70% 55% at 50% 42%,
+      color-mix(in srgb, var(--accent) 22%, transparent),
+      transparent 68%
+    ),
+    color-mix(in srgb, var(--paper) 94%, #0a0f0c);
+  backdrop-filter: blur(8px);
+}
+
+.auth-gate-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.15rem;
+  text-align: center;
+}
+
+.auth-gate-mark {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 4.25rem;
+  height: 4.25rem;
+}
+
+.auth-gate-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1.5px solid color-mix(in srgb, var(--accent) 28%, transparent);
+  border-top-color: var(--accent);
+  border-right-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  animation: auth-gate-spin 0.9s linear infinite;
+}
+
+.auth-gate-seal {
+  display: grid;
+  place-items: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 0.2rem;
+  background: color-mix(in srgb, var(--accent) 16%, var(--paper-bright));
+  color: var(--accent);
+  font-family: var(--font-brush, ui-serif, Georgia, serif);
+  font-size: 1.35rem;
+  letter-spacing: 0.08em;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
+  animation: auth-gate-breathe 1.8s ease-in-out infinite;
+}
+
+.auth-gate-title {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.15rem;
+  margin: 0;
+  font-family: var(--font-brush, ui-serif, Georgia, serif);
+  font-size: 1.5rem;
+  letter-spacing: 0.12em;
+  color: var(--ink);
+}
+
+.auth-gate-dots {
+  display: inline-flex;
+  gap: 0.22rem;
+  margin-left: 0.15rem;
+}
+
+.auth-gate-dots i {
+  display: block;
+  width: 0.28rem;
+  height: 0.28rem;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: auth-gate-dot 1.1s ease-in-out infinite;
+}
+
+.auth-gate-dots i:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.auth-gate-dots i:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.auth-gate-content {
+  min-height: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-gate-ring,
+  .auth-gate-seal,
+  .auth-gate-dots i {
+    animation: none;
+  }
 }
 
 /* 手稿格线（淡入中心，边缘消隐） */
@@ -681,6 +817,61 @@ body:has(.site-shell--desk) {
   @apply h-auto max-w-full rounded-lg;
 }
 
+.prose-blog ul,
+.prose-blog ol {
+  margin: 0 0 0.75em;
+  padding-left: 1.5rem;
+}
+
+.prose-blog ul {
+  list-style-type: disc;
+}
+
+.prose-blog ol {
+  list-style-type: decimal;
+}
+
+.prose-blog li {
+  display: list-item;
+  margin: 0.2em 0;
+}
+
+.prose-blog li > p {
+  margin: 0;
+}
+
+.prose-blog li > p[data-spacing='tight'] {
+  margin-bottom: 0.15em;
+}
+
+.prose-blog li > p[data-spacing='relaxed'] {
+  margin-bottom: 0.85em;
+}
+
+.prose-blog li > p[data-spacing='loose'] {
+  margin-bottom: 1.35em;
+}
+
+.prose-blog li > p + p {
+  margin-top: 0.4em;
+}
+
+.prose-blog p {
+  margin: 0 0 0.75em;
+}
+
+.prose-blog p[data-spacing='tight'] {
+  margin-bottom: 0.2em;
+}
+
+.prose-blog p[data-spacing='relaxed'] {
+  margin-bottom: 1.25em;
+}
+
+.prose-blog p[data-spacing='loose'] {
+  margin-bottom: 1.85em;
+}
+
 .prose-blog table {
   width: auto;
   margin: 0.85em 0;
@@ -705,6 +896,60 @@ body:has(.site-shell--desk) {
   font-weight: 600;
 }
 
+/* —— 文章表态（004）：正文下、页脚上 —— */
+.post-reactions {
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+}
+
+.post-reactions-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.post-reaction-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2.25rem;
+  padding: 0.35rem 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 0.25rem;
+  background: color-mix(in srgb, var(--paper) 92%, var(--ink) 8%);
+  color: var(--ink-muted);
+  font-size: 0.875rem;
+  letter-spacing: 0.02em;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.post-reaction-btn:hover:not(:disabled) {
+  color: var(--ink);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+}
+
+.post-reaction-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.post-reaction-btn--active {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+  background: color-mix(in srgb, var(--accent-soft) 55%, var(--paper));
+}
+
+.post-reactions-error {
+  margin-top: 0.75rem;
+  font-size: 0.875rem;
+  color: color-mix(in srgb, #8b3a2a 85%, var(--ink));
+}
+
 /* —— 作者撰写台（003）：对齐 post-panel / 登录纸感 —— */
 .author-page {
   @apply py-10 md:py-14;
@@ -715,7 +960,8 @@ body:has(.site-shell--desk) {
   height: 100%;
   width: 100%;
   min-width: 0;
-  max-width: var(--site-max, 72rem);
+  /* 撰写台加宽，侧栏宽度不变时中间编辑区变宽 */
+  max-width: none;
   margin: 0 auto;
   /* 水平边距改由 .site-shell--desk 统一提供，保证与页头左右对齐 */
   padding: 0.4rem 0 0.75rem;
@@ -851,14 +1097,14 @@ body:has(.site-shell--desk) {
 
 @media (min-width: 1280px) {
   .author-editor-grid {
-    /* 与首页同宽后侧栏略收，保证中间编辑区够用 */
-    grid-template-columns: 200px minmax(0, 1fr) 200px;
+    /* 两侧固定，加宽的可用宽度全给中间编辑器 */
+    grid-template-columns: 260px minmax(0, 1fr) 260px;
   }
 }
 
 @media (min-width: 1024px) and (max-width: 1279.98px) {
   .author-editor-grid {
-    grid-template-columns: minmax(0, 180px) minmax(0, 1fr) minmax(0, 180px);
+    grid-template-columns: 220px minmax(0, 1fr) 220px;
   }
 }
 
@@ -1172,6 +1418,14 @@ body:has(.site-shell--desk) {
   color: var(--ink-muted);
 }
 
+.author-rt-menu-caption {
+  margin: 0.35rem 0 0.15rem;
+  padding: 0.25rem 0.5rem 0.1rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  color: var(--ink-faint);
+}
+
 .author-rt-swatches {
   display: grid;
   grid-template-columns: repeat(6, 1.2rem);
@@ -1185,6 +1439,19 @@ body:has(.site-shell--desk) {
   border: 1px solid var(--line);
   border-radius: 2px;
   cursor: pointer;
+}
+
+.author-rt-spacing-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  line-height: 1.25;
+}
+
+.author-rt-spacing-hint {
+  font-size: 0.72rem;
+  color: var(--ink-faint);
 }
 
 .author-rt-table-picker {
@@ -1278,6 +1545,38 @@ body:has(.site-shell--desk) {
   margin: 0 0 0.75em;
 }
 
+.author-rich-prose p[data-spacing='tight'] {
+  margin-bottom: 0.2em;
+}
+
+.author-rich-prose p[data-spacing='relaxed'] {
+  margin-bottom: 1.25em;
+}
+
+.author-rich-prose p[data-spacing='loose'] {
+  margin-bottom: 1.85em;
+}
+
+.author-rich-prose li > p {
+  margin: 0;
+}
+
+.author-rich-prose li > p[data-spacing='tight'] {
+  margin-bottom: 0.15em;
+}
+
+.author-rich-prose li > p[data-spacing='relaxed'] {
+  margin-bottom: 0.85em;
+}
+
+.author-rich-prose li > p[data-spacing='loose'] {
+  margin-bottom: 1.35em;
+}
+
+.author-rich-prose li > p + p {
+  margin-top: 0.4em;
+}
+
 .author-rich-prose h1,
 .author-rich-prose h2,
 .author-rich-prose h3 {
@@ -1302,11 +1601,20 @@ body:has(.site-shell--desk) {
 .author-rich-prose ul,
 .author-rich-prose ol {
   margin: 0 0 0.75em;
-  padding-left: 1.35rem;
+  padding-left: 1.5rem;
+}
+
+.author-rich-prose ul {
+  list-style-type: disc;
+}
+
+.author-rich-prose ol {
+  list-style-type: decimal;
 }
 
 .author-rich-prose li {
-  margin: 0.15em 0;
+  display: list-item;
+  margin: 0.2em 0;
 }
 
 .author-rich-prose blockquote {

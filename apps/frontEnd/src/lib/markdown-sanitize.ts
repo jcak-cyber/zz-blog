@@ -55,7 +55,7 @@ export const authorHtmlSanitizeSchema: SanitizeOptions = {
     ],
     figure: ['class', 'data-rehype-pretty-code-figure'],
     figcaption: ['class', 'data-rehype-pretty-code-title', 'data-language'],
-    p: [...(defaultSchema.attributes?.p ?? []), 'style', 'class'],
+    p: [...(defaultSchema.attributes?.p ?? []), 'style', 'class', 'dataSpacing', 'data-spacing'],
     h1: ['id', 'style', 'class'],
     h2: ['id', 'style', 'class'],
     h3: ['id', 'style', 'class'],

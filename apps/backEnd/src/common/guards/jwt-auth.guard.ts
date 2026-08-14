@@ -6,14 +6,14 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { Role } from '@prisma/client';
 import { Request } from 'express';
 import { ACCESS_COOKIE, AUTH_ERRORS } from '../../modules/auth/auth.constants';
 import { AuthUserDto } from '../../modules/auth/dto/auth-user.dto';
-import { Role } from '@prisma/client';
 
 type AccessPayload = {
   sub: string;
-  email: string;
+  username: string;
   role: Role;
   type: 'access';
 };
@@ -44,7 +44,7 @@ export class JwtAuthGuard implements CanActivate {
       }
       request.user = {
         id: payload.sub,
-        email: payload.email,
+        username: payload.username,
         role: payload.role,
       };
       return true;

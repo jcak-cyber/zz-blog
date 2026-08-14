@@ -1,41 +1,27 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useEffect } from 'react';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { LoginForm } from '@/features/auth/login-form';
-import { fetchMe } from '@/lib/auth';
+import { useAuth } from '@/features/auth/auth-provider';
+import { useNavigationLoading } from '@/features/navigation/navigation-provider';
 
-export default function LoginPage() {
+function LoginPanel() {
   const router = useRouter();
-  const [checking, setChecking] = useState(true);
+  const searchParams = useSearchParams();
+  const { ready, user } = useAuth();
+  const { startNavigating } = useNavigationLoading();
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const user = await fetchMe();
-        if (cancelled) return;
-        if (user) {
-          router.replace('/author');
-          return;
-        }
-      } catch {
-        /* 网络异常时仍展示登录表单 */
-      }
-      if (!cancelled) setChecking(false);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [router]);
+    if (!ready || !user) return;
+    const next = searchParams.get('next');
+    startNavigating();
+    router.replace(next && next.startsWith('/') ? next : '/author');
+  }, [ready, user, router, searchParams, startNavigating]);
 
-  if (checking) {
-    return (
-    <div className="mx-auto max-w-lg py-24 text-center" role="status" aria-live="polite">
-        <p className="font-brush text-2xl text-[var(--ink-muted)]">墨迹未干…</p>
-        <p className="mt-2 text-sm text-[var(--ink-faint)]">正在确认登录状态</p>
-      </div>
-    );
+  if (!ready || user) {
+    return null;
   }
 
   return (
@@ -50,40 +36,38 @@ export default function LoginPage() {
               手稿室入口
             </h1>
             <p className="mt-4 max-w-sm text-sm leading-7 text-[#e7e0d4] md:text-base">
-              仅作者可入。读者请从首页慢慢读，无需账号。
+              注册或登录后即可写作发布。读者从首页慢慢读，无需账号。
             </p>
           </div>
           <div className="relative z-[1] mt-8 flex items-end justify-between gap-4">
             <p className="text-xs leading-6 text-[#e7e0d4]/70">
-              森绿与暖赭之间，留一扇只给你的门。
-            </p>
-            <p
-              className="hidden writing-vertical font-brush text-2xl tracking-[0.4em] text-[#f0d2c4]/65 md:block"
-              style={{ writingMode: 'vertical-rl' }}
-              aria-hidden
-            >
-              沉浸·留白·慢读
+              森绿与暖赭之间，留一扇给你的门。
             </p>
           </div>
-          <span
-            className="watermark-index absolute -bottom-6 -right-2 text-[#f6f1e7] opacity-[0.08]"
-            aria-hidden
-          >
-            登
-          </span>
         </aside>
 
         <section className="post-panel border-0 bg-[color-mix(in_srgb,var(--paper-bright)_90%,transparent)] px-6 py-9 backdrop-blur-sm md:px-10 md:py-12">
           <div className="mb-8">
             <p className="text-xs tracking-[0.28em] text-[var(--ink-faint)]">SIGN IN</p>
-            <h2 className="font-brush mt-2 text-3xl tracking-tight">作者登录</h2>
-            <p className="mt-2 text-sm text-[var(--ink-muted)]">
-              使用预先配置的邮箱账号进入。
-            </p>
+            <h2 className="font-brush mt-2 text-3xl tracking-tight">登录</h2>
+            <p className="mt-2 text-sm text-[var(--ink-muted)]">使用用户名与密码进入手稿室。</p>
           </div>
           <LoginForm />
+          <p className="mt-6 text-center text-xs text-[var(--ink-faint)]">
+            <Link href="/" className="hover:text-[var(--accent)]">
+              返回首页阅读
+            </Link>
+          </p>
         </section>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginPanel />
+    </Suspense>
   );
 }

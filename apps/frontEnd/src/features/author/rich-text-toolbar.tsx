@@ -35,6 +35,7 @@ import {
   PaintBucket,
   Quote,
   Redo2,
+  Rows3,
   Strikethrough,
   Table,
   Type,
@@ -45,6 +46,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { uploadCover } from '@/lib/author-posts';
+import { PARAGRAPH_SPACING, type ParagraphSpacingId } from './spaced-paragraph';
 
 type Props = {
   editor: Editor;
@@ -59,6 +61,7 @@ type MenuKey =
   | 'more'
   | 'list'
   | 'align'
+  | 'spacing'
   | 'code'
   | 'image'
   | 'history'
@@ -722,6 +725,51 @@ export function RichTextToolbar({ editor, historyItems, onRestoreHistory }: Prop
                 }}
               >
                 <Icon className="size-3.5" /> {label}
+              </MenuItem>
+            ))}
+          </ToolbarMenu>
+          <ToolbarMenu
+            id="spacing"
+            label="段距"
+            icon={<Rows3 />}
+            open={menu === 'spacing'}
+            active={Boolean(
+              (editor.getAttributes('paragraph').spacing as string | null | undefined) &&
+                editor.getAttributes('paragraph').spacing !== 'normal',
+            )}
+            onToggle={() => toggle('spacing')}
+            onClose={close}
+          >
+            {PARAGRAPH_SPACING.map((item) => {
+              const current =
+                (editor.getAttributes('paragraph').spacing as ParagraphSpacingId | null) ??
+                'normal';
+              return (
+                <MenuItem
+                  key={item.id}
+                  active={current === item.id}
+                  onClick={() => {
+                    editor.chain().focus().setParagraphSpacing(item.id).run();
+                    close();
+                  }}
+                >
+                  <span className="author-rt-spacing-item">
+                    <span>{item.label}</span>
+                    <span className="author-rt-spacing-hint">{item.hint}</span>
+                  </span>
+                </MenuItem>
+              );
+            })}
+            <p className="author-rt-menu-caption">应用到全文</p>
+            {PARAGRAPH_SPACING.map((item) => (
+              <MenuItem
+                key={`all-${item.id}`}
+                onClick={() => {
+                  editor.chain().focus().setAllParagraphSpacing(item.id).run();
+                  close();
+                }}
+              >
+                全文 · {item.label}
               </MenuItem>
             ))}
           </ToolbarMenu>

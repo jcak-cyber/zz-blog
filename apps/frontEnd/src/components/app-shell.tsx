@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { SiteNav } from '@/components/site-nav';
 import { cn } from '@/lib/utils';
@@ -22,12 +23,12 @@ export function AppShell({ children }: { children: ReactNode }) {
     return (
       <div className="site-shell site-shell--desk">
         <header className="site-header mx-auto flex w-full items-center justify-between gap-4 py-3">
-          <a
+          <Link
             href="/"
             className="font-brush text-2xl tracking-tight transition-colors hover:text-[var(--accent)]"
           >
             zz-blog
-          </a>
+          </Link>
           <SiteNav />
         </header>
         <main className="site-main--desk">{children}</main>
@@ -39,12 +40,12 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className={cn('site-shell', workspace && 'site-shell--author')}>
       <div className="site-frame">
         <header className="site-header flex w-full items-center justify-between gap-4 pb-3 pt-8">
-          <a
+          <Link
             href="/"
             className="font-brush text-3xl tracking-tight transition-colors hover:text-[var(--accent)]"
           >
             zz-blog
-          </a>
+          </Link>
           <SiteNav />
         </header>
         <main>{children}</main>

@@ -4,25 +4,29 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PostList } from '@/features/author/post-list';
-import { fetchMe } from '@/lib/auth';
+import { useAuth } from '@/features/auth/auth-provider';
+import { useNavigationLoading } from '@/features/navigation/navigation-provider';
 import { listAuthorPosts, type AuthorPostSummary } from '@/lib/author-posts';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 export default function AuthorPostsPage() {
   const router = useRouter();
+  const { ready, user } = useAuth();
+  const { startNavigating } = useNavigationLoading();
   const [items, setItems] = useState<AuthorPostSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!ready) return;
+    if (!user) {
+      startNavigating();
+      router.replace('/login');
+      return;
+    }
+
     let cancelled = false;
     (async () => {
-      const me = await fetchMe();
-      if (cancelled) return;
-      if (!me) {
-        router.replace('/login');
-        return;
-      }
       try {
         const res = await listAuthorPosts({ pageSize: 50 });
         if (!cancelled) setItems(res.items);
@@ -33,7 +37,11 @@ export default function AuthorPostsPage() {
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, [ready, user, router, startNavigating]);
+
+  if (!ready || !user) {
+    return null;
+  }
 
   if (error) {
     return (
@@ -46,7 +54,7 @@ export default function AuthorPostsPage() {
   if (!items) {
     return (
       <div className="author-page">
-        <p className="text-sm text-[var(--ink-faint)]">加载我的文章…</p>
+        <p className="text-sm text-[var(--ink-faint)]">加载中…</p>
       </div>
     );
   }

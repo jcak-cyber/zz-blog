@@ -13,6 +13,7 @@ import {
   type AuthorPostDetail,
   type AuthorPostAction,
 } from '@/lib/author-posts';
+import { useNavigationLoading } from '@/features/navigation/navigation-provider';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -45,6 +46,7 @@ function toLocalInputValue(iso: string | null | undefined) {
 
 export function PostEditor({ mode, initial }: Props) {
   const router = useRouter();
+  const { startNavigating } = useNavigationLoading();
   const slugTouched = useRef(Boolean(initial?.slug));
   const [title, setTitle] = useState(initial?.title ?? '');
   const [slug, setSlug] = useState(initial?.slug ?? '');
@@ -130,11 +132,13 @@ export function PostEditor({ mode, initial }: Props) {
 
       if (opts?.redirect !== false) {
         if (action === 'publish') {
+          startNavigating();
           router.push(`/posts/${saved.slug}`);
           router.refresh();
           return;
         }
         if (mode === 'create') {
+          startNavigating();
           router.replace(`/author/posts/${saved.id}/edit`);
           router.refresh();
           return;
@@ -157,6 +161,7 @@ export function PostEditor({ mode, initial }: Props) {
     try {
       await deleteAuthorPost(initial.id);
       setDeleteOpen(false);
+      startNavigating();
       router.push('/author/posts');
       router.refresh();
     } catch (e) {

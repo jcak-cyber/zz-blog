@@ -3,6 +3,7 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 import type { PostDetail } from '@/lib/posts';
 import { resolveMediaUrl } from '@/lib/media';
+import { PostReactions } from '@/features/posts/post-reactions';
 
 function formatDate(value: string) {
   try {
@@ -42,9 +43,14 @@ export function PostDetailView({ post, content }: { post: PostDetail; content: R
       ) : null}
 
       <header className="mt-8">
-        <time className="text-sm text-ink-faint dark:text-zinc-400">
-          {formatDate(post.publishedAt)}
-        </time>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-ink-faint dark:text-zinc-400">
+          <time>{formatDate(post.publishedAt)}</time>
+          {post.author?.username ? (
+            <span>
+              · 作者 <span className="text-[var(--ink-muted)]">{post.author.username}</span>
+            </span>
+          ) : null}
+        </div>
         <h1 className="mt-3 font-serif text-4xl leading-tight tracking-tight md:text-5xl">
           {post.title}
         </h1>
@@ -58,6 +64,8 @@ export function PostDetailView({ post, content }: { post: PostDetail; content: R
       </header>
 
       <div className="prose-blog mt-10">{content}</div>
+
+      <PostReactions slug={post.slug} />
     </article>
   );
 }

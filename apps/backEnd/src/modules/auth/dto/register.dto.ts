@@ -1,8 +1,8 @@
 import { IsNotEmpty, IsString, Matches, MinLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class LoginDto {
-  @ApiProperty({ example: 'author', description: '用户名' })
+export class RegisterDto {
+  @ApiProperty({ example: 'alice', description: '用户名（全站唯一）' })
   @IsString({ message: '请填写用户名' })
   @IsNotEmpty({ message: '请填写用户名' })
   @Matches(/^[a-zA-Z0-9_\u4e00-\u9fff-]{2,32}$/, {
@@ -10,9 +10,9 @@ export class LoginDto {
   })
   username!: string;
 
-  @ApiProperty({ example: 'ChangeMe123!' })
+  @ApiProperty({ example: 'password1', minLength: 8 })
   @IsString({ message: '密码格式不正确' })
   @IsNotEmpty({ message: '请填写密码' })
-  @MinLength(1, { message: '请填写密码' })
+  @MinLength(8, { message: '密码至少 8 个字符' })
   password!: string;
 }

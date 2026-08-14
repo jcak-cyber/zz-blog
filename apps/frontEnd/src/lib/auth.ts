@@ -2,7 +2,7 @@ import { ApiError, API_BASE } from '@/lib/api';
 
 export type AuthUser = {
   id: string;
-  email: string;
+  username: string;
   role: string;
 };
 
@@ -54,10 +54,20 @@ async function authFetch<T>(
   return res.json() as Promise<T>;
 }
 
-export async function login(email: string, password: string): Promise<{ user: AuthUser }> {
+export async function register(
+  username: string,
+  password: string,
+): Promise<{ user: AuthUser }> {
+  return authFetch<{ user: AuthUser }>('/auth/register', {
+    method: 'POST',
+    body: JSON.stringify({ username, password }),
+  });
+}
+
+export async function login(username: string, password: string): Promise<{ user: AuthUser }> {
   return authFetch<{ user: AuthUser }>('/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ username, password }),
   });
 }
 

@@ -83,6 +83,7 @@ export function PostListItem({
                   最新
                 </span>
                 <time dateTime={post.publishedAt}>{formatDate(post.publishedAt)}</time>
+                {post.author?.username ? <span>@{post.author.username}</span> : null}
                 {post.tags?.[0] ? <span>#{post.tags[0].name}</span> : null}
               </div>
               <h2 className="post-title-link font-display mt-4 text-3xl leading-[1.15] tracking-tight md:text-5xl">
@@ -135,9 +136,10 @@ export function PostListItem({
             </div>
           </div>
           <div className="flex flex-1 flex-col p-4 md:p-5">
-            <time className="text-xs text-[var(--ink-faint)]" dateTime={post.publishedAt}>
-              {formatDate(post.publishedAt)}
-            </time>
+            <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--ink-faint)]">
+              <time dateTime={post.publishedAt}>{formatDate(post.publishedAt)}</time>
+              {post.author?.username ? <span>@{post.author.username}</span> : null}
+            </div>
             <h2 className="post-title-link font-display mt-2 text-xl leading-snug md:text-2xl">
               {post.title}
             </h2>
@@ -181,9 +183,10 @@ export function PostListItem({
           )}
         </div>
         <div className="flex flex-col justify-center p-5 md:p-8">
-          <div className="flex items-center gap-3 text-sm text-[var(--ink-faint)]">
+          <div className="flex flex-wrap items-center gap-3 text-sm text-[var(--ink-faint)]">
             <span className="font-display text-[var(--accent-2)]">{indexLabel(index)}</span>
             <time dateTime={post.publishedAt}>{formatDate(post.publishedAt)}</time>
+            {post.author?.username ? <span>@{post.author.username}</span> : null}
           </div>
           <h2 className="post-title-link font-display mt-3 text-2xl leading-snug md:text-3xl">
             {post.title}

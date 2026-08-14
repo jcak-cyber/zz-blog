@@ -5,11 +5,13 @@ import { publicVisibleWhere } from './post-visibility';
 
 const summaryInclude = {
   tags: { include: { tag: true } },
+  author: { select: { id: true, username: true } },
 } satisfies Prisma.PostInclude;
 
 const detailInclude = {
   tags: { include: { tag: true } },
   category: true,
+  author: { select: { id: true, username: true } },
 } satisfies Prisma.PostInclude;
 
 @Injectable()

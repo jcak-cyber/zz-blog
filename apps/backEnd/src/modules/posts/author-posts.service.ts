@@ -1,7 +1,6 @@
 import {
   BadRequestException,
   ConflictException,
-  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -62,7 +61,7 @@ export class AuthorPostsService {
 
   private assertOwn(post: { authorId: string }, userId: string) {
     if (post.authorId !== userId) {
-      throw new ForbiddenException('无权操作此文章');
+      throw new NotFoundException('未找到文章');
     }
   }
 
