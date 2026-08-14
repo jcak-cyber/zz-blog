@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   HttpCode,
+  Patch,
   Post,
   Req,
   Res,
@@ -27,6 +28,7 @@ import { AuthService } from './auth.service';
 import { AuthUserDto } from './dto/auth-user.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -76,11 +78,27 @@ export class AuthController {
   @Get('me')
   @UseGuards(JwtAuthGuard)
   @ApiCookieAuth('access_token')
-  @ApiOperation({ summary: '当前登录用户' })
-  me(@CurrentUser() user: AuthUserDto | undefined): AuthUserDto {
+  @ApiOperation({ summary: '当前登录用户资料' })
+  me(@CurrentUser() user: AuthUserDto | undefined): Promise<AuthUserDto> {
     if (!user) {
       throw new UnauthorizedException(AUTH_ERRORS.UNAUTHORIZED);
     }
-    return user;
+    return this.authService.getMe(user.id);
+  }
+
+  @Patch('profile')
+  @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  @ApiCookieAuth('access_token')
+  @ApiOperation({ summary: '更新本人昵称 / 头像 / 简介' })
+  @ApiOkResponse({ description: '更新后的用户资料' })
+  updateProfile(
+    @CurrentUser() user: AuthUserDto | undefined,
+    @Body() dto: UpdateProfileDto,
+  ): Promise<AuthUserDto> {
+    if (!user) {
+      throw new UnauthorizedException(AUTH_ERRORS.UNAUTHORIZED);
+    }
+    return this.authService.updateProfile(user.id, dto);
   }
 }

@@ -232,6 +232,169 @@ body:has(.site-shell--desk) {
   min-height: 100dvh;
 }
 
+/* —— 站点品牌字标（刊头版） —— */
+.site-brand {
+  position: relative;
+  display: inline-flex;
+  align-items: stretch;
+  gap: 0.7rem;
+  text-decoration: none;
+  isolation: isolate;
+}
+
+.site-brand:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+
+.site-brand-vert {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-inline: 0.15rem;
+  border-right: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line));
+  color: var(--accent);
+  font-family: 'ZCOOL XiaoWei', 'Noto Serif SC', serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.35em;
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  opacity: 0.85;
+  transition:
+    color 0.3s ease,
+    border-color 0.3s ease,
+    opacity 0.3s ease;
+}
+
+.site-brand-word {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.15rem;
+  padding-block: 0.1rem;
+}
+
+.site-brand-ink {
+  position: absolute;
+  left: -0.35rem;
+  top: 0.15rem;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 60% 40% 55% 45%;
+  background:
+    radial-gradient(
+      circle at 35% 30%,
+      color-mix(in srgb, var(--accent) 45%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      circle at 70% 75%,
+      color-mix(in srgb, var(--accent-2) 35%, transparent),
+      transparent 65%
+    );
+  filter: blur(0.5px);
+  opacity: 0.55;
+  z-index: 0;
+  pointer-events: none;
+  transform: scale(0.85) rotate(-12deg);
+  transition:
+    transform 0.5s var(--ease-spring),
+    opacity 0.35s ease;
+}
+
+.site-brand-main {
+  position: relative;
+  z-index: 1;
+  font-family: 'ZCOOL XiaoWei', 'Noto Serif SC', serif;
+  font-size: 2rem;
+  line-height: 0.95;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+  background: linear-gradient(
+    100deg,
+    var(--ink) 0%,
+    var(--ink) 38%,
+    var(--accent) 52%,
+    var(--accent-2) 68%,
+    var(--ink) 82%,
+    var(--ink) 100%
+  );
+  background-size: 220% 100%;
+  background-position: 0% 50%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  transition: background-position 0.8s var(--ease-out);
+}
+
+.site-brand-sub {
+  position: relative;
+  z-index: 1;
+  margin-left: 0.12rem;
+  font-size: 0.58rem;
+  font-weight: 500;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  transition: color 0.3s ease, letter-spacing 0.4s var(--ease-out);
+}
+
+.site-brand:hover .site-brand-vert {
+  color: var(--accent-2);
+  border-color: color-mix(in srgb, var(--accent-2) 55%, var(--line));
+  opacity: 1;
+}
+
+.site-brand:hover .site-brand-ink {
+  transform: scale(1.15) rotate(8deg);
+  opacity: 0.85;
+}
+
+.site-brand:hover .site-brand-main {
+  background-position: 100% 50%;
+}
+
+.site-brand:hover .site-brand-sub {
+  color: var(--accent);
+  letter-spacing: 0.5em;
+}
+
+.site-brand--compact {
+  gap: 0.5rem;
+}
+
+.site-brand--compact .site-brand-vert {
+  font-size: 0.62rem;
+  letter-spacing: 0.28em;
+}
+
+.site-brand--compact .site-brand-main {
+  font-size: 1.45rem;
+}
+
+.site-brand--compact .site-brand-sub {
+  font-size: 0.5rem;
+  letter-spacing: 0.32em;
+}
+
+.site-brand--compact .site-brand-ink {
+  width: 1.15rem;
+  height: 1.15rem;
+  left: -0.2rem;
+  top: 0.1rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-brand-ink,
+  .site-brand-main,
+  .site-brand-sub,
+  .site-brand-vert {
+    transition: none;
+  }
+}
+
 /* 页头右侧：标语 + 作者入口 */
 .site-nav {
   display: flex;
@@ -268,10 +431,10 @@ body:has(.site-shell--desk) {
 .site-nav-author {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.45rem;
   border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--line));
   background: color-mix(in srgb, var(--paper-bright) 70%, transparent);
-  padding: 0.4rem 0.85rem;
+  padding: 0.28rem 0.75rem 0.28rem 0.35rem;
   font-size: 0.75rem;
   letter-spacing: 0.18em;
   color: var(--ink);
@@ -281,6 +444,41 @@ body:has(.site-shell--desk) {
     border-color 0.25s ease,
     background-color 0.25s ease,
     transform 0.25s var(--ease-out);
+}
+
+.site-nav-avatar {
+  width: 1.55rem;
+  height: 1.55rem;
+  flex-shrink: 0;
+  border-radius: 9999px;
+  object-fit: cover;
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--line));
+  background: color-mix(in srgb, var(--accent-soft) 40%, var(--paper));
+}
+
+.site-nav-avatar--empty {
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+}
+
+.author-chip-avatar {
+  display: grid;
+  place-items: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 9999px;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--line));
+  background: color-mix(in srgb, var(--accent-soft) 45%, var(--paper-bright));
+  color: var(--accent);
+}
+
+.author-chip-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .site-nav-author::after {
@@ -444,6 +642,124 @@ body:has(.site-shell--desk) {
   .auth-gate-dots i {
     animation: none;
   }
+}
+
+/* —— 个人中心资料（005） —— */
+.profile-avatar-block {
+  margin-bottom: 0.25rem;
+}
+
+.profile-avatar-btn {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 4.75rem;
+  height: 4.75rem;
+  flex-shrink: 0;
+  overflow: visible;
+  border-radius: 9999px;
+  border: 1.5px solid color-mix(in srgb, var(--accent) 40%, var(--line));
+  background:
+    radial-gradient(
+      circle at 35% 30%,
+      color-mix(in srgb, var(--accent) 18%, transparent),
+      transparent 55%
+    ),
+    color-mix(in srgb, var(--accent-soft) 35%, var(--paper-bright));
+  color: var(--accent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 12%, transparent);
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    transform 0.15s ease;
+}
+
+.profile-avatar-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  background:
+    radial-gradient(
+      circle at 35% 30%,
+      color-mix(in srgb, var(--accent) 26%, transparent),
+      transparent 55%
+    ),
+    color-mix(in srgb, var(--accent-soft) 50%, var(--paper-bright));
+  transform: translateY(-1px);
+}
+
+.profile-avatar-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.profile-avatar-btn--filled {
+  overflow: hidden;
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
+  padding: 0;
+  background: var(--paper-deep);
+  box-shadow: none;
+}
+
+.profile-avatar-btn--filled:hover:not(:disabled) {
+  transform: none;
+}
+
+.profile-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-avatar-mark {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 2.35rem;
+  height: 2.35rem;
+}
+
+.profile-avatar-mark-user {
+  width: 1.85rem;
+  height: 1.85rem;
+  color: color-mix(in srgb, var(--accent) 88%, var(--ink));
+  opacity: 0.92;
+}
+
+.profile-avatar-mark-badge {
+  position: absolute;
+  right: -0.2rem;
+  bottom: -0.15rem;
+  display: grid;
+  place-items: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 9999px;
+  border: 1.5px solid color-mix(in srgb, var(--paper-bright) 80%, var(--accent));
+  background: var(--accent);
+  color: var(--paper-bright);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 25%, transparent);
+}
+
+.profile-bio-input {
+  display: block;
+  width: 100%;
+  min-height: 6.5rem;
+  resize: vertical;
+  border: 1px solid var(--line);
+  border-radius: 0.25rem;
+  background: color-mix(in srgb, var(--paper) 70%, transparent);
+  padding: 0.75rem 0.85rem;
+  color: var(--ink);
+  font-size: 0.925rem;
+  line-height: 1.65;
+}
+
+.profile-bio-input::placeholder {
+  color: var(--ink-faint);
+}
+
+.profile-bio-input:focus {
+  outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  outline-offset: 1px;
 }
 
 /* 手稿格线（淡入中心，边缘消隐） */

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   UnauthorizedException,
@@ -9,6 +10,7 @@ import { Prisma, Role } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { CookieOptions, Response } from 'express';
 import { PrismaService } from '../../prisma/prisma.service';
+import { LocalStorageAdapter } from '../uploads/local-storage.adapter';
 import {
   ACCESS_COOKIE,
   AUTH_ERRORS,
@@ -17,10 +19,20 @@ import {
 import { AuthUserDto } from './dto/auth-user.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 type RefreshPayload = {
   sub: string;
   type: 'refresh';
+};
+
+type UserRow = {
+  id: string;
+  username: string;
+  nickname: string;
+  role: Role;
+  avatarUrl: string | null;
+  bio: string | null;
 };
 
 @Injectable()
@@ -29,6 +41,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
+    private readonly storage: LocalStorageAdapter,
   ) {}
 
   private isProd() {
@@ -67,8 +80,15 @@ export class AuthService {
     };
   }
 
-  private toUserDto(user: { id: string; username: string; role: Role }): AuthUserDto {
-    return { id: user.id, username: user.username, role: user.role };
+  private toUserDto(user: UserRow): AuthUserDto {
+    return {
+      id: user.id,
+      username: user.username,
+      nickname: user.nickname,
+      role: user.role,
+      avatarUrl: user.avatarUrl ?? null,
+      bio: user.bio ?? null,
+    };
   }
 
   private signAccess(user: { id: string; username: string; role: Role }) {
@@ -122,6 +142,73 @@ export class AuthService {
     res.clearCookie(REFRESH_COOKIE, base);
   }
 
+  async getMe(userId: string): Promise<AuthUserDto> {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user || (user.role !== Role.ADMIN && user.role !== Role.AUTHOR)) {
+      throw new UnauthorizedException(AUTH_ERRORS.UNAUTHORIZED);
+    }
+    return this.toUserDto(user);
+  }
+
+  private async safeRemoveUpload(url: string | null | undefined) {
+    if (!url?.trim()) return;
+    try {
+      await this.storage.removeByUrl(url);
+    } catch {
+      /* 尽力删除，失败不阻断资料更新 */
+    }
+  }
+
+  async updateProfile(userId: string, dto: UpdateProfileDto): Promise<AuthUserDto> {
+    if (
+      dto.nickname === undefined &&
+      dto.avatarUrl === undefined &&
+      dto.bio === undefined
+    ) {
+      throw new BadRequestException('请至少更新一项资料');
+    }
+
+    const current = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!current || (current.role !== Role.ADMIN && current.role !== Role.AUTHOR)) {
+      throw new UnauthorizedException(AUTH_ERRORS.UNAUTHORIZED);
+    }
+
+    const data: Prisma.UserUpdateInput = {};
+
+    if (dto.nickname !== undefined) {
+      const nickname = dto.nickname.trim();
+      if (!nickname) {
+        throw new BadRequestException('昵称不能为空');
+      }
+      data.nickname = nickname;
+    }
+
+    if (dto.bio !== undefined) {
+      if (dto.bio === null || dto.bio.trim() === '') {
+        data.bio = null;
+      } else {
+        data.bio = dto.bio.trim();
+      }
+    }
+
+    let oldAvatar: string | null = null;
+    if (dto.avatarUrl !== undefined) {
+      oldAvatar = current.avatarUrl;
+      data.avatarUrl = dto.avatarUrl;
+    }
+
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data,
+    });
+
+    if (dto.avatarUrl !== undefined && oldAvatar && oldAvatar !== dto.avatarUrl) {
+      await this.safeRemoveUpload(oldAvatar);
+    }
+
+    return this.toUserDto(updated);
+  }
+
   async register(dto: RegisterDto): Promise<{ user: AuthUserDto }> {
     const username = dto.username.trim();
     const email = `${username.toLowerCase()}@users.local`;
@@ -131,6 +218,7 @@ export class AuthService {
       const user = await this.prisma.user.create({
         data: {
           username,
+          nickname: username,
           email,
           passwordHash,
           role: Role.AUTHOR,

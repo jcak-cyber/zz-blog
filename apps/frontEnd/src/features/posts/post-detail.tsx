@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import type { PostDetail } from '@/lib/posts';
 import { resolveMediaUrl } from '@/lib/media';
 import { PostReactions } from '@/features/posts/post-reactions';
+import { AuthorNameLink } from '@/features/posts/author-name-link';
 
 function formatDate(value: string) {
   try {
@@ -45,9 +46,16 @@ export function PostDetailView({ post, content }: { post: PostDetail; content: R
       <header className="mt-8">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-ink-faint dark:text-zinc-400">
           <time>{formatDate(post.publishedAt)}</time>
-          {post.author?.username ? (
+          {post.author?.username && (post.author.nickname || post.author.username) ? (
             <span>
-              · 作者 <span className="text-[var(--ink-muted)]">{post.author.username}</span>
+              · 作者{' '}
+              <AuthorNameLink
+                username={post.author.username}
+                nickname={post.author.nickname}
+                avatarUrl={post.author.avatarUrl}
+                withAt={false}
+                className="text-[var(--ink-muted)]"
+              />
             </span>
           ) : null}
         </div>

@@ -10,6 +10,7 @@ import { PostsService } from './posts.service';
   imports: [AuthModule],
   controllers: [PostsController, AuthorPostsController],
   providers: [PostsService, AuthorPostsService, PostsRepository],
-  exports: [PostsService, AuthorPostsService],
+  exports: [PostsService, AuthorPostsService, PostsRepository],
 })
 export class PostsModule {}
+

@@ -7,6 +7,9 @@ import type { AuthUser } from '@/lib/auth';
 import { logout } from '@/lib/auth';
 import { useAuth } from '@/features/auth/auth-provider';
 import { useNavigationLoading } from '@/features/navigation/navigation-provider';
+import { ProfileNicknameForm } from '@/features/auth/profile-nickname-form';
+import { ProfileAvatar } from '@/features/auth/profile-avatar';
+import { ProfileBioForm } from '@/features/auth/profile-bio-form';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -40,6 +43,7 @@ export function AuthorEntry({ user }: { user: AuthUser }) {
           <div className="relative z-[1]">
             <p className="text-xs tracking-[0.35em] text-[#f0d2c4]">AUTHOR ENTRY</p>
             <h1 className="font-brush mt-4 text-4xl md:text-5xl">手稿台</h1>
+            <ProfileNicknameForm nickname={user.nickname || user.username} />
             <p className="mt-4 max-w-xs text-sm leading-7 text-[#e7e0d4]">
               已验证身份。可在此撰写、预约发布，或继续编辑草稿。
             </p>
@@ -47,7 +51,9 @@ export function AuthorEntry({ user }: { user: AuthUser }) {
         </aside>
 
         <section className="bg-[color-mix(in_srgb,var(--paper-bright)_88%,transparent)] px-6 py-9 md:px-10 md:py-12">
-          <p className="text-xs tracking-[0.28em] text-[var(--ink-faint)]">SIGNED IN</p>
+          <ProfileAvatar user={user} />
+
+          <p className="mt-6 text-xs tracking-[0.28em] text-[var(--ink-faint)]">SIGNED IN</p>
           <h2 className="font-brush mt-2 text-3xl tracking-tight">你已登录</h2>
           <p className="mt-4 text-[var(--ink-muted)]">
             当前账号 <span className="text-[var(--ink)]">{user.username}</span>
@@ -79,6 +85,8 @@ export function AuthorEntry({ user }: { user: AuthUser }) {
               返回阅读
             </Link>
           </div>
+
+          <ProfileBioForm bio={user.bio} />
         </section>
       </div>
     </div>

@@ -3,15 +3,23 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { publicVisibleWhere } from './post-visibility';
 
+/** 公开阅读侧作者字段（避免 satisfies 嵌套校验偶发读到过期 Client 类型） */
+const publicAuthorSelect = {
+  id: true,
+  username: true,
+  nickname: true,
+  avatarUrl: true,
+} as Prisma.UserSelect;
+
 const summaryInclude = {
   tags: { include: { tag: true } },
-  author: { select: { id: true, username: true } },
+  author: { select: publicAuthorSelect },
 } satisfies Prisma.PostInclude;
 
 const detailInclude = {
   tags: { include: { tag: true } },
   category: true,
-  author: { select: { id: true, username: true } },
+  author: { select: publicAuthorSelect },
 } satisfies Prisma.PostInclude;
 
 @Injectable()
@@ -23,6 +31,27 @@ export class PostsRepository {
       where: publicVisibleWhere(),
       include: summaryInclude,
       orderBy: { publishedAt: 'desc' },
+    });
+  }
+
+  findPublishedSummariesByAuthorId(authorId: string) {
+    return this.prisma.post.findMany({
+      where: { ...publicVisibleWhere(), authorId },
+      include: summaryInclude,
+      orderBy: { publishedAt: 'desc' },
+    });
+  }
+
+  findPublicAuthorByUsername(username: string) {
+    return this.prisma.user.findUnique({
+      where: { username },
+      select: {
+        id: true,
+        username: true,
+        nickname: true,
+        avatarUrl: true,
+        bio: true,
+      },
     });
   }
 

@@ -54,7 +54,10 @@ export class UploadAuthGuard implements CanActivate {
       request.user = {
         id: payload.sub,
         username: payload.username,
+        nickname: payload.username,
         role: payload.role,
+        avatarUrl: null,
+        bio: null,
       };
       return true;
     } catch {

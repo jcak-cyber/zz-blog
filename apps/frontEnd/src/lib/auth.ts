@@ -3,7 +3,16 @@ import { ApiError, API_BASE } from '@/lib/api';
 export type AuthUser = {
   id: string;
   username: string;
+  nickname: string;
   role: string;
+  avatarUrl?: string | null;
+  bio?: string | null;
+};
+
+export type UpdateProfileInput = {
+  nickname?: string;
+  avatarUrl?: string | null;
+  bio?: string | null;
 };
 
 /** 浏览器走同域 /api/v1（Next rewrite），便于 Cookie 落在前端域 */
@@ -89,4 +98,34 @@ export async function fetchMe(): Promise<AuthUser | null> {
     }
     throw error;
   }
+}
+
+export async function updateProfile(input: UpdateProfileInput): Promise<AuthUser> {
+  return authFetch<AuthUser>('/auth/profile', {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  });
+}
+
+export async function uploadAvatarFile(file: File): Promise<{ id: string; url: string }> {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await fetch(`${browserApiBase()}/uploads`, {
+    method: 'POST',
+    credentials: 'include',
+    body: form,
+    cache: 'no-store',
+  });
+  if (!res.ok) {
+    throw new ApiError(await parseError(res), res.status);
+  }
+  return res.json() as Promise<{ id: string; url: string }>;
+}
+
+export async function deleteUploadFile(url: string): Promise<void> {
+  await authFetch<void>('/uploads', {
+    method: 'DELETE',
+    body: JSON.stringify({ url }),
+    emptyResponse: true,
+  });
 }

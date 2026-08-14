@@ -2,7 +2,12 @@ import { apiGet } from '@/lib/api';
 
 export type TagSummary = { name: string; slug: string };
 
-export type AuthorSummary = { id: string; username: string };
+export type AuthorSummary = {
+  id: string;
+  username: string;
+  nickname: string;
+  avatarUrl?: string | null;
+};
 
 export type PostSummary = {
   id: string;
