@@ -16,6 +16,8 @@ import {
   AUTH_ERRORS,
   REFRESH_COOKIE,
 } from './auth.constants';
+import { CaptchaService } from './captcha.service';
+import { LoginAttemptService, LOGIN_CAPTCHA_THRESHOLD } from './login-attempt.service';
 import { AuthUserDto } from './dto/auth-user.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -42,6 +44,8 @@ export class AuthService {
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
     private readonly storage: LocalStorageAdapter,
+    private readonly captcha: CaptchaService,
+    private readonly loginAttempts: LoginAttemptService,
   ) {}
 
   private isProd() {
@@ -210,6 +214,8 @@ export class AuthService {
   }
 
   async register(dto: RegisterDto): Promise<{ user: AuthUserDto }> {
+    this.captcha.consume(dto.captchaId, dto.captchaCode);
+
     const username = dto.username.trim();
     const email = `${username.toLowerCase()}@users.local`;
     const passwordHash = await bcrypt.hash(dto.password, 10);
@@ -233,24 +239,66 @@ export class AuthService {
     }
   }
 
-  async login(dto: LoginDto, res: Response): Promise<{ user: AuthUserDto }> {
+  loginChallenge(attemptKey: string): { requiresCaptcha: boolean; failCount: number } {
+    const failCount = this.loginAttempts.failCount(attemptKey);
+    return {
+      requiresCaptcha: this.loginAttempts.requiresCaptcha(attemptKey),
+      failCount,
+    };
+  }
+
+  async login(
+    dto: LoginDto,
+    res: Response,
+    attemptKey: string,
+  ): Promise<{ user: AuthUserDto }> {
     const username = dto.username.trim();
+    const needsCaptcha = this.loginAttempts.requiresCaptcha(attemptKey);
+
+    if (needsCaptcha) {
+      try {
+        this.captcha.consume(dto.captchaId, dto.captchaCode);
+      } catch (err) {
+        if (err instanceof BadRequestException) {
+          const body = err.getResponse();
+          const raw =
+            typeof body === 'string'
+              ? body
+              : ((body as { message?: string | string[] }).message ?? '请填写图形验证码');
+          throw new BadRequestException({
+            message: Array.isArray(raw) ? raw.join(', ') : raw,
+            requiresCaptcha: true,
+          });
+        }
+        throw err;
+      }
+    }
+
+    const fail = (message: string) => {
+      const count = this.loginAttempts.recordFailure(attemptKey);
+      throw new UnauthorizedException({
+        message,
+        requiresCaptcha: count >= LOGIN_CAPTCHA_THRESHOLD,
+      });
+    };
+
     const user = await this.prisma.user.findUnique({ where: { username } });
     if (!user) {
-      throw new UnauthorizedException(AUTH_ERRORS.INVALID_CREDENTIALS);
+      fail(AUTH_ERRORS.INVALID_CREDENTIALS);
     }
 
-    const ok = await bcrypt.compare(dto.password, user.passwordHash);
+    const ok = await bcrypt.compare(dto.password, user!.passwordHash);
     if (!ok) {
-      throw new UnauthorizedException(AUTH_ERRORS.INVALID_CREDENTIALS);
+      fail(AUTH_ERRORS.INVALID_CREDENTIALS);
     }
 
-    if (user.role !== Role.ADMIN && user.role !== Role.AUTHOR) {
-      throw new UnauthorizedException(AUTH_ERRORS.FORBIDDEN_ROLE);
+    if (user!.role !== Role.ADMIN && user!.role !== Role.AUTHOR) {
+      fail(AUTH_ERRORS.FORBIDDEN_ROLE);
     }
 
-    this.setAuthCookies(res, user);
-    return { user: this.toUserDto(user) };
+    this.loginAttempts.clear(attemptKey);
+    this.setAuthCookies(res, user!);
+    return { user: this.toUserDto(user!) };
   }
 
   async refresh(refreshToken: string | undefined, res: Response): Promise<{ user: AuthUserDto }> {

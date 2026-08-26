@@ -16,10 +16,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
       const exResponse = exception.getResponse();
-      let message =
+      let message: string | string[] =
         typeof exResponse === 'string'
           ? exResponse
           : ((exResponse as { message?: string | string[] }).message ?? exception.message);
+      const requiresCaptcha =
+        typeof exResponse === 'object' &&
+        exResponse !== null &&
+        Boolean((exResponse as { requiresCaptcha?: boolean }).requiresCaptcha);
 
       // 限流等默认英文信息改为简体中文
       if (status === HttpStatus.TOO_MANY_REQUESTS) {
@@ -31,6 +35,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       response.status(status).json({
         statusCode: status,
         message,
+        ...(requiresCaptcha ? { requiresCaptcha: true } : {}),
         error: HttpStatus[status] ?? 'Error',
       });
       return;

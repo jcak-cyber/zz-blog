@@ -43,10 +43,10 @@ pnpm prisma:seed
 
 ```bash
 # 终端 1
-pnpm dev:back
+pnpm run dev:back
 
 # 终端 2
-pnpm dev:front
+pnpm run dev:front
 ```
 
 - 前端：http://localhost:3000

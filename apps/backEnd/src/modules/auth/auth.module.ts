@@ -6,6 +6,8 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { LocalStorageAdapter } from '../uploads/local-storage.adapter';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { CaptchaService } from './captcha.service';
+import { LoginAttemptService } from './login-attempt.service';
 
 @Module({
   imports: [
@@ -20,7 +22,7 @@ import { AuthService } from './auth.service';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtAuthGuard, LocalStorageAdapter],
+  providers: [AuthService, CaptchaService, LoginAttemptService, JwtAuthGuard, LocalStorageAdapter],
   exports: [AuthService, JwtAuthGuard, JwtModule],
 })
 export class AuthModule {}

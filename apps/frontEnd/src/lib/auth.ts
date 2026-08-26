@@ -23,17 +23,19 @@ function browserApiBase() {
   return API_BASE;
 }
 
-async function parseError(res: Response): Promise<string> {
+async function parseError(res: Response): Promise<{ message: string; requiresCaptcha: boolean }> {
   let message = `请求失败 (${res.status})`;
+  let requiresCaptcha = false;
   try {
     const body = await res.json();
     if (body?.message) {
       message = Array.isArray(body.message) ? body.message.join(', ') : String(body.message);
     }
+    requiresCaptcha = Boolean(body?.requiresCaptcha);
   } catch {
     /* ignore */
   }
-  return message;
+  return { message, requiresCaptcha };
 }
 
 async function authFetch<T>(
@@ -53,7 +55,8 @@ async function authFetch<T>(
   });
 
   if (!res.ok) {
-    throw new ApiError(await parseError(res), res.status);
+    const { message, requiresCaptcha } = await parseError(res);
+    throw new ApiError(message, res.status, requiresCaptcha);
   }
 
   if (emptyResponse || res.status === 204) {
@@ -63,20 +66,45 @@ async function authFetch<T>(
   return res.json() as Promise<T>;
 }
 
+export async function fetchCaptcha(): Promise<{ captchaId: string; imageSvg: string }> {
+  return authFetch<{ captchaId: string; imageSvg: string }>('/auth/captcha');
+}
+
 export async function register(
   username: string,
   password: string,
+  captchaId: string,
+  captchaCode: string,
 ): Promise<{ user: AuthUser }> {
   return authFetch<{ user: AuthUser }>('/auth/register', {
     method: 'POST',
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify({ username, password, captchaId, captchaCode }),
   });
 }
 
-export async function login(username: string, password: string): Promise<{ user: AuthUser }> {
+export async function fetchLoginChallenge(
+  username: string,
+): Promise<{ requiresCaptcha: boolean; failCount: number }> {
+  const q = encodeURIComponent(username.trim());
+  return authFetch<{ requiresCaptcha: boolean; failCount: number }>(
+    `/auth/login-challenge?username=${q}`,
+  );
+}
+
+export async function login(
+  username: string,
+  password: string,
+  captcha?: { captchaId: string; captchaCode: string },
+): Promise<{ user: AuthUser }> {
   return authFetch<{ user: AuthUser }>('/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify({
+      username,
+      password,
+      ...(captcha
+        ? { captchaId: captcha.captchaId, captchaCode: captcha.captchaCode }
+        : {}),
+    }),
   });
 }
 

@@ -1,5 +1,5 @@
-import { IsNotEmpty, IsString, Matches, MinLength } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsNotEmpty, IsOptional, IsString, Matches, MinLength } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class LoginDto {
   @ApiProperty({ example: 'author', description: '用户名' })
@@ -15,4 +15,14 @@ export class LoginDto {
   @IsNotEmpty({ message: '请填写密码' })
   @MinLength(1, { message: '请填写密码' })
   password!: string;
+
+  @ApiPropertyOptional({ description: '失败满 3 次后必填：验证码 ID' })
+  @IsOptional()
+  @IsString()
+  captchaId?: string;
+
+  @ApiPropertyOptional({ description: '失败满 3 次后必填：验证码内容' })
+  @IsOptional()
+  @IsString()
+  captchaCode?: string;
 }

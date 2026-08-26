@@ -5,6 +5,7 @@ import {
   HttpCode,
   Patch,
   Post,
+  Query,
   Req,
   Res,
   UnauthorizedException,
@@ -25,6 +26,8 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { AUTH_ERRORS, REFRESH_COOKIE } from './auth.constants';
 import { AuthService } from './auth.service';
+import { CaptchaService } from './captcha.service';
+import { LoginAttemptService } from './login-attempt.service';
 import { AuthUserDto } from './dto/auth-user.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -33,12 +36,49 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly captchaService: CaptchaService,
+    private readonly loginAttempts: LoginAttemptService,
+  ) {}
+
+  private clientIp(req: Request): string {
+    const forwarded = req.headers['x-forwarded-for'];
+    if (typeof forwarded === 'string' && forwarded.trim()) {
+      return forwarded.split(',')[0]?.trim() || req.ip || 'unknown';
+    }
+    return req.ip || 'unknown';
+  }
+
+  private attemptKey(req: Request, username: string): string {
+    return this.loginAttempts.key(this.clientIp(req), username);
+  }
+
+  @Get('captcha')
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  @ApiOperation({ summary: '获取图形验证码（注册 / 登录挑战）' })
+  @ApiOkResponse({ description: '返回 captchaId 与 SVG' })
+  getCaptcha(): { captchaId: string; imageSvg: string } {
+    return this.captchaService.create();
+  }
+
+  @Get('login-challenge')
+  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @ApiOperation({ summary: '查询当前账号是否需要登录图形验证码' })
+  loginChallenge(
+    @Query('username') username: string | undefined,
+    @Req() req: Request,
+  ): { requiresCaptcha: boolean; failCount: number } {
+    if (!username?.trim()) {
+      return { requiresCaptcha: false, failCount: 0 };
+    }
+    return this.authService.loginChallenge(this.attemptKey(req, username));
+  }
 
   @Post('register')
   @HttpCode(201)
   @Throttle({ default: { limit: 8, ttl: 60_000 } })
-  @ApiOperation({ summary: '公众注册（不自动登录）' })
+  @ApiOperation({ summary: '公众注册（不自动登录，需图形验证码）' })
   @ApiCreatedResponse({ description: '注册成功，需再登录' })
   @ApiConflictResponse({ description: '用户名已被占用' })
   async register(@Body() dto: RegisterDto): Promise<{ user: AuthUserDto }> {
@@ -47,14 +87,15 @@ export class AuthController {
 
   @Post('login')
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
-  @ApiOperation({ summary: '用户名密码登录' })
+  @ApiOperation({ summary: '用户名密码登录；失败满 3 次后需图形验证码' })
   @ApiOkResponse({ description: '登录成功，写入 HttpOnly Cookie' })
   @ApiUnauthorizedResponse({ description: AUTH_ERRORS.INVALID_CREDENTIALS })
   async login(
     @Body() dto: LoginDto,
+    @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ): Promise<{ user: AuthUserDto }> {
-    return this.authService.login(dto, res);
+    return this.authService.login(dto, res, this.attemptKey(req, dto.username));
   }
 
   @Post('refresh')
