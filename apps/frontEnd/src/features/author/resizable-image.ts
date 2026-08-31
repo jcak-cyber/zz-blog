@@ -30,34 +30,9 @@ function serializeSizedImage(attrs: {
 /**
  * 可拖拽缩放的图片：拖四角手柄调整大小，尺寸写入 width/height。
  * 有尺寸时以自闭合 HTML img 落盘，避免 markdown `![]()` 丢掉宽高，并兼容 MDX。
+ * 使用 Image 默认 node view（自定义 addNodeView 在 TipTap 类型下易与 Docker 构建冲突）。
  */
 export const ResizableImage = Image.extend({
-  addNodeView() {
-    const parent = this.parent?.();
-    if (!parent) return null;
-
-    return (props) => {
-      const view = parent(props);
-      if (!view) {
-        throw new Error('ResizableImage: parent Image node view returned empty');
-      }
-
-      // TipTap 默认等 onload 才显示；缓存图可能已 complete，补一次显形
-      const root = view.dom as HTMLElement;
-      const img = root.querySelector('img');
-      if (img instanceof HTMLImageElement) {
-        const reveal = () => {
-          root.style.visibility = '';
-          root.style.pointerEvents = '';
-        };
-        if (img.complete) reveal();
-        else img.addEventListener('load', reveal, { once: true });
-      }
-
-      return view;
-    };
-  },
-
   addStorage() {
     return {
       markdown: {
