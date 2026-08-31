@@ -17,10 +17,13 @@ WORKDIR /app
 ENV COREPACK_NPM_REGISTRY=https://registry.npmmirror.com
 ENV npm_config_registry=https://registry.npmmirror.com
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
-ARG NEXT_PUBLIC_API_BASE_URL=http://localhost:4000/api/v1
+ARG NEXT_PUBLIC_API_BASE_URL=/api/v1
 ARG NEXT_PUBLIC_SITE_URL=http://localhost:3000
+# rewrite 在 build 时写入，Docker 内网指向 backend 服务名
+ARG BACKEND_URL=http://backend:4000
 ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
+ENV BACKEND_URL=$BACKEND_URL
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/frontEnd/node_modules ./apps/frontEnd/node_modules
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* ./
