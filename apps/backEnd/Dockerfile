@@ -1,13 +1,18 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
-RUN corepack enable
+# 国内构建：Corepack 拉 pnpm、pnpm 装依赖都走 npmmirror，避免连不上 npmjs.org
+ENV COREPACK_NPM_REGISTRY=https://registry.npmmirror.com
+ENV npm_config_registry=https://registry.npmmirror.com
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* ./
 COPY apps/backEnd/package.json apps/backEnd/
 RUN pnpm install --filter @zz-blog/backend...
 
 FROM node:20-alpine AS build
 WORKDIR /app
-RUN corepack enable
+ENV COREPACK_NPM_REGISTRY=https://registry.npmmirror.com
+ENV npm_config_registry=https://registry.npmmirror.com
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/backEnd/node_modules ./apps/backEnd/node_modules
 COPY package.json pnpm-workspace.yaml ./
