@@ -1,11 +1,15 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
-# 国内构建：Corepack 拉 pnpm、pnpm 装依赖都走 npmmirror，避免连不上 npmjs.org
+# 国内构建：Corepack / pnpm 走 npmmirror；lockfile 里的 npmjs tarball 也要改写
 ENV COREPACK_NPM_REGISTRY=https://registry.npmmirror.com
 ENV npm_config_registry=https://registry.npmmirror.com
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* ./
 COPY apps/frontEnd/package.json apps/frontEnd/
+RUN printf 'registry=https://registry.npmmirror.com\n' > .npmrc \
+  && if [ -f pnpm-lock.yaml ]; then \
+       sed -i 's#https://registry.npmjs.org#https://registry.npmmirror.com#g' pnpm-lock.yaml; \
+     fi
 RUN pnpm install --filter @zz-blog/frontend...
 
 FROM node:20-alpine AS build
