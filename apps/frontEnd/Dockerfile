@@ -23,7 +23,7 @@ ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/frontEnd/node_modules ./apps/frontEnd/node_modules
-COPY package.json pnpm-workspace.yaml ./
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* ./
 COPY apps/frontEnd ./apps/frontEnd
 WORKDIR /app/apps/frontEnd
 RUN pnpm build
@@ -33,8 +33,10 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
-COPY --from=build /app/apps/frontEnd/public ./public
+# 注意：目录名是 frontEnd（驼峰），不要改成 frontend
 COPY --from=build /app/apps/frontEnd/.next/standalone ./
 COPY --from=build /app/apps/frontEnd/.next/static ./apps/frontEnd/.next/static
+COPY --from=build /app/apps/frontEnd/public ./apps/frontEnd/public
 EXPOSE 3000
-CMD ["node", "apps/frontEnd/server.js"]
+# 兼容不同 standalone 布局；优先使用真实目录名 frontEnd
+CMD ["sh", "-c", "if [ -f apps/frontEnd/server.js ]; then exec node apps/frontEnd/server.js; elif [ -f apps/frontend/server.js ]; then exec node apps/frontend/server.js; elif [ -f server.js ]; then exec node server.js; else echo 'server.js not found' && find /app -name server.js -print && exit 1; fi"]
