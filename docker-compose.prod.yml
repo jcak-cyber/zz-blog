@@ -20,7 +20,7 @@ services:
       retries: 10
     restart: unless-stopped
 
-  backEnd:
+  backend:
     image: ghcr.io/${GHCR_OWNER:-jcak-cyber}/zz-blog-backend:${IMAGE_TAG:-latest}
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-zzblog}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-zzblog}?schema=public
@@ -40,16 +40,16 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  frontEnd:
+  frontend:
     image: ghcr.io/${GHCR_OWNER:-jcak-cyber}/zz-blog-frontend:${IMAGE_TAG:-latest}
     environment:
       NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:4000/api/v1}
       NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
-      BACKEND_URL: http://backEnd:4000
+      BACKEND_URL: http://backend:4000
     ports:
       - '${FRONTEND_PORT:-3000}:3000'
     depends_on:
-      - backEnd
+      - backend
     restart: unless-stopped
 
 volumes:
