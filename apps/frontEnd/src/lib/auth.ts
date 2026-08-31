@@ -101,9 +101,7 @@ export async function login(
     body: JSON.stringify({
       username,
       password,
-      ...(captcha
-        ? { captchaId: captcha.captchaId, captchaCode: captcha.captchaCode }
-        : {}),
+      ...(captcha ? { captchaId: captcha.captchaId, captchaCode: captcha.captchaCode } : {}),
     }),
   });
 }
@@ -145,7 +143,8 @@ export async function uploadAvatarFile(file: File): Promise<{ id: string; url: s
     cache: 'no-store',
   });
   if (!res.ok) {
-    throw new ApiError(await parseError(res), res.status);
+    const { message, requiresCaptcha } = await parseError(res);
+    throw new ApiError(message, res.status, requiresCaptcha);
   }
   return res.json() as Promise<{ id: string; url: string }>;
 }
