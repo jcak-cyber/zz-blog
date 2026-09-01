@@ -21,6 +21,9 @@ jobs:
     permissions:
       contents: read
       packages: write
+    outputs:
+      owner: ${{ steps.meta.outputs.owner }}
+      tag: ${{ steps.meta.outputs.tag }}
 
     steps:
       - name: Checkout
@@ -34,7 +37,7 @@ jobs:
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
             echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
           else
-            echo "tag=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+            echo "tag=latest" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Setup Docker Buildx
@@ -64,8 +67,10 @@ jobs:
         run: |
           API_BASE="${{ vars.NEXT_PUBLIC_API_BASE_URL }}"
           SITE_URL="${{ vars.NEXT_PUBLIC_SITE_URL }}"
-          echo "api_base=${API_BASE:-http://localhost:4000/api/v1}" >> "$GITHUB_OUTPUT"
+          BACKEND_URL="${{ vars.BACKEND_URL }}"
+          echo "api_base=${API_BASE:-/api/v1}" >> "$GITHUB_OUTPUT"
           echo "site_url=${SITE_URL:-http://localhost:3000}" >> "$GITHUB_OUTPUT"
+          echo "backend_url=${BACKEND_URL:-http://backend:4000}" >> "$GITHUB_OUTPUT"
 
       - name: Build & push frontend
         uses: docker/build-push-action@v6
@@ -76,8 +81,44 @@ jobs:
           build-args: |
             NEXT_PUBLIC_API_BASE_URL=${{ steps.fe.outputs.api_base }}
             NEXT_PUBLIC_SITE_URL=${{ steps.fe.outputs.site_url }}
+            BACKEND_URL=${{ steps.fe.outputs.backend_url }}
           tags: |
             ${{ env.REGISTRY }}/${{ steps.meta.outputs.owner }}/zz-blog-frontend:latest
             ${{ env.REGISTRY }}/${{ steps.meta.outputs.owner }}/zz-blog-frontend:${{ steps.meta.outputs.tag }}
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,mode=max,scope=frontend
+
+  deploy:
+    name: Deploy to server
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # 在仓库 Variables 设置 ENABLE_AUTO_DEPLOY=true 后才会自动 SSH 部署
+    if: >
+      vars.ENABLE_AUTO_DEPLOY == 'true' &&
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.event_name == 'workflow_dispatch')
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ vars.DEPLOY_SSH_PORT || 22 }}
+          script_stop: true
+          envs: IMAGE_TAG,GHCR_OWNER,GHCR_TOKEN,GHCR_USER,DEPLOY_PATH
+          script: |
+            set -euo pipefail
+            APP_DIR="${DEPLOY_PATH:-$HOME/zz-blog}"
+            cd "$APP_DIR"
+            git fetch origin
+            git reset --hard origin/main
+            export IMAGE_TAG GHCR_OWNER GHCR_TOKEN GHCR_USER
+            chmod +x scripts/remote-deploy.sh
+            bash scripts/remote-deploy.sh
+        env:
+          IMAGE_TAG: ${{ needs.build-and-push.outputs.tag }}
+          GHCR_OWNER: ${{ needs.build-and-push.outputs.owner }}
+          GHCR_TOKEN: ${{ secrets.GHCR_READ_TOKEN }}
+          GHCR_USER: ${{ secrets.GHCR_USERNAME }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}

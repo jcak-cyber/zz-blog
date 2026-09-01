@@ -100,31 +100,78 @@ docker compose up --build
 | Workflow | 触发 | 作用 |
 |----------|------|------|
 | `.github/workflows/ci.yml` | PR / push 到 `main` | 安装依赖、Lint、前后端 Build |
-| `.github/workflows/cd.yml` | push 到 `main`、打 `v*` 标签、或手动 | 构建并推送镜像到 GHCR |
+| `.github/workflows/cd.yml` | push 到 `main`、打 `v*` 标签、或手动 | 构建推送 GHCR；可选 SSH 自动部署 |
 
 镜像地址（小写 owner）：
 
 - `ghcr.io/<owner>/zz-blog-backend:latest`
 - `ghcr.io/<owner>/zz-blog-frontend:latest`
 
-可选仓库变量（Settings → Secrets and variables → Actions → Variables）：
+### 自动部署到服务器（方案 B）
 
-- `NEXT_PUBLIC_API_BASE_URL`
-- `NEXT_PUBLIC_SITE_URL`
+1. **GitHub → Settings → Secrets and variables → Actions**
 
-服务器拉取部署示例见 `docker-compose.prod.yml`：
+   **Secrets：**
+
+   | Name | 含义 |
+   |------|------|
+   | `DEPLOY_HOST` | 服务器公网 IP，如 `121.40.40.46` |
+   | `DEPLOY_USER` | SSH 用户，如 `admin` |
+   | `DEPLOY_SSH_KEY` | 用于 CI 登录的**私钥**全文 |
+   | `DEPLOY_PATH` | 可选，默认服务器上 `$HOME/zz-blog` |
+   | `GHCR_READ_TOKEN` | 可选；GHCR 私有包时需要（`read:packages` 的 PAT） |
+   | `GHCR_USERNAME` | 可选；与 PAT 对应的 GitHub 用户名 |
+
+   **Variables：**
+
+   | Name | 建议值 |
+   |------|--------|
+   | `ENABLE_AUTO_DEPLOY` | `true`（开启后才会 SSH 部署） |
+   | `NEXT_PUBLIC_API_BASE_URL` | `/api/v1` |
+   | `NEXT_PUBLIC_SITE_URL` | `http://你的公网IP:3000` |
+   | `DEPLOY_SSH_PORT` | 可选，默认 `22` |
+
+2. **服务器：放行 CI 公钥**
 
 ```bash
-# 登录 GHCR（用有 read:packages 的 PAT）
-echo $GHCR_TOKEN | docker login ghcr.io -u <github-user> --password-stdin
+# 本机生成一对专用密钥（不要用你日常登录密钥上传到 GitHub）
+ssh-keygen -t ed25519 -C "github-actions-deploy" -f ./deploy_key -N ""
 
-export POSTGRES_PASSWORD=...
-export JWT_ACCESS_SECRET=...
-export JWT_REFRESH_SECRET=...
-export IMPORT_TOKEN=...
-export GHCR_OWNER=jcak-cyber
-docker compose -f docker-compose.prod.yml pull
-docker compose -f docker-compose.prod.yml up -d
+# 把 deploy_key.pub 追加到服务器
+ssh admin@你的IP 'mkdir -p ~/.ssh && chmod 700 ~/.ssh'
+# 将 deploy_key.pub 内容追加到服务器 ~/.ssh/authorized_keys
+# 将 deploy_key（私钥）整段粘贴到 GitHub Secret DEPLOY_SSH_KEY
+```
+
+3. **服务器：切到生产 compose（首次一次）**
+
+```bash
+cd ~/zz-blog
+git pull
+
+# 确认 .env 含 POSTGRES_PASSWORD / JWT_* / IMPORT_TOKEN / CORS_ORIGIN / COOKIE_SECURE=false 等
+# 停掉旧的「源码构建」栈（不要加 -v，以免删数据卷）
+sudo docker compose down
+
+# 若 GHCR 包是私有的，先登录一次，或配置 ~/.ghcr_token
+# echo YOUR_PAT > ~/.ghcr_token && chmod 600 ~/.ghcr_token
+
+sudo docker compose -f docker-compose.prod.yml pull
+sudo docker compose -f docker-compose.prod.yml up -d
+sudo docker compose -f docker-compose.prod.yml ps
+```
+
+4. **之后**：本机 `git push` 到 `main` → Actions 构建镜像 → SSH 执行 `scripts/remote-deploy.sh` 更新服务器。
+
+手动触发：GitHub → Actions → CD → Run workflow。
+
+### 仅手动拉镜像（不走自动 SSH）
+
+```bash
+echo $GHCR_TOKEN | docker login ghcr.io -u <github-user> --password-stdin
+cd ~/zz-blog
+sudo docker compose -f docker-compose.prod.yml pull
+sudo docker compose -f docker-compose.prod.yml up -d
 ```
 
 首次推送后，若 GHCR 包为私有，可在 GitHub Packages 页面将包设为 Public，或继续用 PAT 拉取。
