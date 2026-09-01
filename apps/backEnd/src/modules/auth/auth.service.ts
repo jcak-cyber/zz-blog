@@ -11,11 +11,7 @@ import * as bcrypt from 'bcryptjs';
 import { CookieOptions, Response } from 'express';
 import { PrismaService } from '../../prisma/prisma.service';
 import { LocalStorageAdapter } from '../uploads/local-storage.adapter';
-import {
-  ACCESS_COOKIE,
-  AUTH_ERRORS,
-  REFRESH_COOKIE,
-} from './auth.constants';
+import { ACCESS_COOKIE, AUTH_ERRORS, REFRESH_COOKIE } from './auth.constants';
 import { CaptchaService } from './captcha.service';
 import { LoginAttemptService, LOGIN_CAPTCHA_THRESHOLD } from './login-attempt.service';
 import { AuthUserDto } from './dto/auth-user.dto';
@@ -52,6 +48,14 @@ export class AuthService {
     return this.config.get<string>('NODE_ENV') === 'production';
   }
 
+  /** HTTP（如公网 IP）部署时设 COOKIE_SECURE=false，否则浏览器不存/不发 Cookie */
+  private cookieSecure() {
+    const explicit = this.config.get<string>('COOKIE_SECURE');
+    if (explicit === 'true') return true;
+    if (explicit === 'false') return false;
+    return this.isProd();
+  }
+
   private parseTtlMs(ttl: string, fallbackMs: number): number {
     const match = /^(\d+)([smhd])$/i.exec(ttl.trim());
     if (!match) return fallbackMs;
@@ -77,7 +81,7 @@ export class AuthService {
   private cookieBase(maxAgeMs: number): CookieOptions {
     return {
       httpOnly: true,
-      secure: this.isProd(),
+      secure: this.cookieSecure(),
       sameSite: 'lax',
       path: '/',
       maxAge: maxAgeMs,
@@ -138,7 +142,7 @@ export class AuthService {
   clearAuthCookies(res: Response) {
     const base: CookieOptions = {
       httpOnly: true,
-      secure: this.isProd(),
+      secure: this.cookieSecure(),
       sameSite: 'lax',
       path: '/',
     };
@@ -164,11 +168,7 @@ export class AuthService {
   }
 
   async updateProfile(userId: string, dto: UpdateProfileDto): Promise<AuthUserDto> {
-    if (
-      dto.nickname === undefined &&
-      dto.avatarUrl === undefined &&
-      dto.bio === undefined
-    ) {
+    if (dto.nickname === undefined && dto.avatarUrl === undefined && dto.bio === undefined) {
       throw new BadRequestException('请至少更新一项资料');
     }
 
@@ -247,11 +247,7 @@ export class AuthService {
     };
   }
 
-  async login(
-    dto: LoginDto,
-    res: Response,
-    attemptKey: string,
-  ): Promise<{ user: AuthUserDto }> {
+  async login(dto: LoginDto, res: Response, attemptKey: string): Promise<{ user: AuthUserDto }> {
     const username = dto.username.trim();
     const needsCaptcha = this.loginAttempts.requiresCaptcha(attemptKey);
 
