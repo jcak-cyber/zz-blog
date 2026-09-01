@@ -36,3 +36,5 @@ apps/backEnd/prisma/*.db-journal
 
 # Misc
 *.tsbuildinfo
+deploy_key
+deploy_key.pub
