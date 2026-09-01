@@ -1,5 +1,6 @@
-import { PrismaClient, Role } from '@prisma/client';
-import * as bcrypt from 'bcryptjs';
+/* eslint-disable @typescript-eslint/no-require-imports -- Prisma seed runs as plain Node in Docker */
+const { PrismaClient, Role } = require('@prisma/client');
+const bcrypt = require('bcryptjs');
 
 const prisma = new PrismaClient();
 

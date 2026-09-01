@@ -11,11 +11,11 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
-    "prisma:seed": "node -r ts-node/register/transpile-only prisma/seed.ts",
+    "prisma:seed": "node prisma/seed.js",
     "import:content": "node -r ts-node/register/transpile-only scripts/import-content.ts"
   },
   "prisma": {
-    "seed": "node -r ts-node/register/transpile-only prisma/seed.ts"
+    "seed": "node prisma/seed.js"
   },
   "dependencies": {
     "@nestjs/common": "^10.4.15",
