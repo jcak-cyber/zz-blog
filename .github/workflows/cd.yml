@@ -92,7 +92,7 @@ jobs:
     name: Deploy to server
     needs: build-and-push
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 60
     # 在仓库 Variables 设置 ENABLE_AUTO_DEPLOY=true 后才会自动 SSH 部署
     if: >
       vars.ENABLE_AUTO_DEPLOY == 'true' &&
@@ -105,6 +105,8 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           port: ${{ vars.DEPLOY_SSH_PORT || 22 }}
+          # 国内服务器拉 GHCR 可能很慢，默认 10m 不够
+          command_timeout: 45m
           script_stop: true
           envs: IMAGE_TAG,GHCR_OWNER,GHCR_TOKEN,GHCR_USER,DEPLOY_PATH
           script: |
