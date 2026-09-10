@@ -108,14 +108,21 @@ jobs:
           # 国内服务器拉 GHCR 可能很慢，默认 10m 不够
           command_timeout: 45m
           script_stop: true
-          envs: IMAGE_TAG,GHCR_OWNER,GHCR_TOKEN,GHCR_USER,DEPLOY_PATH
+          envs: IMAGE_TAG,GHCR_OWNER,GHCR_TOKEN,GHCR_USER,DEPLOY_PATH,DEPLOY_MODE,GHCR_REGISTRY
           script: |
             set -euo pipefail
             APP_DIR="${DEPLOY_PATH:-$HOME/zz-blog}"
             cd "$APP_DIR"
             git fetch origin
             git reset --hard origin/main
-            export IMAGE_TAG GHCR_OWNER GHCR_TOKEN GHCR_USER
+            export IMAGE_TAG GHCR_OWNER GHCR_TOKEN GHCR_USER DEPLOY_MODE GHCR_REGISTRY
+            # 若 .env 写了 DEPLOY_MODE / GHCR_REGISTRY，以服务器为准
+            if [[ -f .env ]]; then
+              set -a
+              # shellcheck disable=SC1091
+              source <(grep -E '^(DEPLOY_MODE|GHCR_REGISTRY|GHCR_OWNER)=' .env | tr -d '\r' || true)
+              set +a
+            fi
             chmod +x scripts/remote-deploy.sh
             bash scripts/remote-deploy.sh
         env:
@@ -124,3 +131,5 @@ jobs:
           GHCR_TOKEN: ${{ secrets.GHCR_READ_TOKEN }}
           GHCR_USER: ${{ secrets.GHCR_USERNAME }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DEPLOY_MODE: pull
+          GHCR_REGISTRY: ghcr.m.daocloud.io

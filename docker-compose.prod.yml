@@ -1,9 +1,9 @@
-# 生产镜像部署（配合 GitHub Actions CD → GHCR → SSH 拉取）
-# 服务器需已配置 .env，并已 docker login ghcr.io（或每次由 CI 登录）
+# 生产镜像部署（CD 推 GHCR → 服务器经国内镜像加速拉取）
+# .env 可设：GHCR_REGISTRY=ghcr.m.daocloud.io（默认）、GHCR_OWNER、IMAGE_TAG
 
 services:
   postgres:
-    image: postgres:16-alpine
+    image: ${POSTGRES_IMAGE:-docker.m.daocloud.io/library/postgres:16-alpine}
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-zzblog}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
@@ -20,7 +20,8 @@ services:
     restart: unless-stopped
 
   backend:
-    image: ghcr.io/${GHCR_OWNER:-jcak-cyber}/zz-blog-backend:${IMAGE_TAG:-latest}
+    # 默认走 DaoCloud 对 ghcr.io 的加速；官方源可设 GHCR_REGISTRY=ghcr.io
+    image: ${GHCR_REGISTRY:-ghcr.m.daocloud.io}/${GHCR_OWNER:-jcak-cyber}/zz-blog-backend:${IMAGE_TAG:-latest}
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-zzblog}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-zzblog}?schema=public
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?set JWT_ACCESS_SECRET}
@@ -41,7 +42,7 @@ services:
     restart: unless-stopped
 
   frontend:
-    image: ghcr.io/${GHCR_OWNER:-jcak-cyber}/zz-blog-frontend:${IMAGE_TAG:-latest}
+    image: ${GHCR_REGISTRY:-ghcr.m.daocloud.io}/${GHCR_OWNER:-jcak-cyber}/zz-blog-frontend:${IMAGE_TAG:-latest}
     environment:
       NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-/api/v1}
       NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
