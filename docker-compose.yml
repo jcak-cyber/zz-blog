@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:16-alpine
+    image: ${POSTGRES_IMAGE:-docker.m.daocloud.io/library/postgres:16-alpine}
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-zzblog}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-zzblog}
@@ -15,6 +15,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    restart: unless-stopped
 
   backend:
     build:
@@ -38,6 +39,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    restart: unless-stopped
 
   frontend:
     build:
@@ -57,6 +59,7 @@ services:
       - '3000:3000'
     depends_on:
       - backend
+    restart: unless-stopped
 
 volumes:
   pgdata:

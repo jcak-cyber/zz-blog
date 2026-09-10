@@ -131,5 +131,5 @@ jobs:
           GHCR_TOKEN: ${{ secrets.GHCR_READ_TOKEN }}
           GHCR_USER: ${{ secrets.GHCR_USERNAME }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
-          DEPLOY_MODE: pull
-          GHCR_REGISTRY: ghcr.m.daocloud.io
+          DEPLOY_MODE: build
+          GHCR_REGISTRY: ghcr.io

@@ -16,7 +16,7 @@ GHCR_OWNER="${GHCR_OWNER:-jcak-cyber}"
 GHCR_REGISTRY="${GHCR_REGISTRY:-ghcr.m.daocloud.io}"
 COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.prod.yml}"
 DEPLOY_BRANCH="${DEPLOY_BRANCH:-main}"
-DEPLOY_MODE="${DEPLOY_MODE:-pull}"
+DEPLOY_MODE="${DEPLOY_MODE:-build}"
 
 mkdir -p logs
 LOG_FILE="${ROOT_DIR}/logs/deploy.log"
@@ -48,6 +48,7 @@ fi
 
 if [[ "${DEPLOY_MODE}" == "build" ]]; then
   echo "[deploy] building from source (npmmirror in Dockerfiles)"
+  # 与当前生产一致：沿用已有容器网络/数据卷；构建前后端
   "${COMPOSE[@]}" -f docker-compose.yml up -d --build --remove-orphans
   "${COMPOSE[@]}" -f docker-compose.yml ps
   echo "[deploy] done (build)"
