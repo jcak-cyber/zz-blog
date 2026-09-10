@@ -7,6 +7,7 @@ import helmet from 'helmet';
 import { Logger } from 'nestjs-pino';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
+import { assertProductionEnv } from './common/config/assert-production-env';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -16,6 +17,8 @@ async function bootstrap() {
   const config = app.get(ConfigService);
   const logger = app.get(Logger);
   app.useLogger(logger);
+
+  assertProductionEnv(config);
 
   app.setGlobalPrefix('api/v1');
   app.use(cookieParser());

@@ -1,4 +1,6 @@
 services:
+  # 说明：本文件既用于「本机只起 Postgres」，也用于服务器 CD 的源码构建部署（DEPLOY_MODE=build）。
+  # 本机开发前后端请用 pnpm dev:*，不要用本文件的 frontend/backend 当开发热更新。
   postgres:
     image: ${POSTGRES_IMAGE:-docker.m.daocloud.io/library/postgres:16-alpine}
     environment:

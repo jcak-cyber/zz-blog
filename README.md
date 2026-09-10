@@ -49,6 +49,34 @@ pnpm run dev:back
 pnpm run dev:front
 ```
 
+前端：http://localhost:3000  
+后端：http://localhost:4000/api/v1  
+Swagger：http://localhost:4000/docs
+
+## 开发 / 生产环境约定
+
+| | 开发（本机） | 生产（服务器） |
+|--|-------------|----------------|
+| 启动 | `pnpm dev:back` / `pnpm dev:front` | CD → `scripts/remote-deploy.sh`（默认 `DEPLOY_MODE=build`） |
+| 配置文件 | `apps/backEnd/.env`、`apps/frontEnd/.env.local` | 仓库根目录 `.env`（勿提交） |
+| `NODE_ENV` | `development` | `production` |
+| Compose | 通常只 `docker compose up -d postgres` | `docker-compose.yml` 构建并运行三件套 |
+| `docker-compose.prod.yml` | 不用 | 仅在能稳定拉 GHCR 时可选 |
+
+**构建时写入前端的变量**（改完需重新 build）：
+
+- `NEXT_PUBLIC_API_BASE_URL`（生产建议 `/api/v1`）
+- `NEXT_PUBLIC_SITE_URL`
+- `BACKEND_URL`（Docker 内网一般为 `http://backend:4000`）
+
+**运行时读取（改 `.env` 后重建/重启容器即可）**：
+
+- `DATABASE_URL` / `POSTGRES_*`、`JWT_*`、`IMPORT_TOKEN`、`CORS_ORIGIN`、`COOKIE_SECURE`
+
+生产启动时后端会校验：禁止默认 JWT/IMPORT 密钥、禁止库密码仍为 `zzblog`、必须配置 `CORS_ORIGIN`。不通过则进程退出。
+
+## Docker 一键（可选）
+
 - 前端：http://localhost:3000
 - 后端 API：http://localhost:4000/api/v1/health
 - Swagger：http://localhost:4000/docs

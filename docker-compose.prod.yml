@@ -1,5 +1,6 @@
-# 生产镜像部署（CD 推 GHCR → 服务器经国内镜像加速拉取）
-# .env 可设：GHCR_REGISTRY=ghcr.m.daocloud.io（默认）、GHCR_OWNER、IMAGE_TAG
+# 可选：从 GHCR 拉镜像部署（DEPLOY_MODE=pull）。
+# 国内直连 ghcr.io 易超时；个人镜像也无法走 DaoCloud 白名单加速。
+# 当前推荐生产使用 docker-compose.yml + DEPLOY_MODE=build。
 
 services:
   postgres:
