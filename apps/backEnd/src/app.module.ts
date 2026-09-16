@@ -8,6 +8,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { AuthorsModule } from './modules/authors/authors.module';
 import { HealthModule } from './modules/health/health.module';
 import { PostsModule } from './modules/posts/posts.module';
+import { CommentsModule } from './modules/comments/comments.module';
 import { ReactionsModule } from './modules/reactions/reactions.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
 import { PrismaModule } from './prisma/prisma.module';
@@ -30,6 +31,7 @@ import { PrismaModule } from './prisma/prisma.module';
     HealthModule,
     PostsModule,
     ReactionsModule,
+    CommentsModule,
     UploadsModule,
   ],
   providers: [

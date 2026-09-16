@@ -73,7 +73,7 @@ export function PostDetailView({ post, content }: { post: PostDetail; content: R
 
       <div className="prose-blog mt-10">{content}</div>
 
-      <PostReactions slug={post.slug} />
+      <PostReactions slug={post.slug} initialCommentCount={post.commentCount ?? 0} />
     </article>
   );
 }

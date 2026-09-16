@@ -14,6 +14,11 @@ const publicAuthorSelect = {
 const summaryInclude = {
   tags: { include: { tag: true } },
   author: { select: publicAuthorSelect },
+  _count: {
+    select: {
+      comments: { where: { parentId: null } },
+    },
+  },
 } satisfies Prisma.PostInclude;
 
 const detailInclude = {

@@ -8,6 +8,7 @@ import { toSkipTake } from '../../common/pagination/pagination.dto';
 import { ListPostsQueryDto } from './dto/list-posts.query.dto';
 import { CreatePostDto, ImportPostItemDto, UpdatePostDto } from './dto/mutate-posts.dto';
 import { parseMarkdownDocument } from './markdown/frontmatter';
+import { PrismaService } from '../../prisma/prisma.service';
 import { PostsRepository } from './posts.repository';
 
 function mapSummary(post: Awaited<ReturnType<PostsRepository['findAllPublishedSummaries']>>[number]) {
@@ -25,6 +26,7 @@ function mapSummary(post: Awaited<ReturnType<PostsRepository['findAllPublishedSu
       nickname: post.author.nickname,
       avatarUrl: post.author.avatarUrl,
     },
+    commentCount: post._count.comments,
   };
 }
 
@@ -69,7 +71,10 @@ function assertPublicable(input: {
 
 @Injectable()
 export class PostsService {
-  constructor(private readonly postsRepository: PostsRepository) {}
+  constructor(
+    private readonly postsRepository: PostsRepository,
+    private readonly prisma: PrismaService,
+  ) {}
 
   async listPublished(query: ListPostsQueryDto) {
     if (query.all) {
@@ -101,7 +106,12 @@ export class PostsService {
 
     for (const candidate of candidates) {
       const post = await this.postsRepository.findPublishedBySlug(candidate);
-      if (post) return mapDetail(post);
+      if (post) {
+        const commentCount = await this.prisma.comment.count({
+          where: { postId: post.id, parentId: null },
+        });
+        return { ...mapDetail(post), commentCount };
+      }
     }
     throw new NotFoundException('未找到文章');
   }

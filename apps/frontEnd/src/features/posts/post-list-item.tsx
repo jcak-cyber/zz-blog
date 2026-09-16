@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { MessageCircle } from 'lucide-react';
 import type { PostSummary } from '@/lib/posts';
 import { resolveMediaUrl } from '@/lib/media';
 import { AuthorNameLink } from '@/features/posts/author-name-link';
@@ -18,6 +19,17 @@ function formatDate(value: string) {
 
 function indexLabel(index: number) {
   return String(index + 1).padStart(2, '0');
+}
+
+function CommentCount({ count }: { count?: number }) {
+  const n = count ?? 0;
+  return (
+    <span className="inline-flex items-center gap-1" title={`${n} 条评论`}>
+      <MessageCircle className="size-3.5 opacity-80" aria-hidden />
+      <span>{n}</span>
+      <span className="sr-only">条评论</span>
+    </span>
+  );
 }
 
 const tones = ['tone-a', 'tone-b', 'tone-c'] as const;
@@ -46,7 +58,6 @@ export function PostListItem({
           ? 'animate-rise-delay-3'
           : 'animate-rise-delay-4';
   const tone = tones[index % tones.length];
-  const reverse = variant === 'row' && index % 2 === 0;
   const href = `/posts/${post.slug}`;
   const author =
     !hideAuthor && post.author?.username && (post.author.nickname || post.author.username) ? (
@@ -87,6 +98,7 @@ export function PostListItem({
               <time dateTime={post.publishedAt}>{formatDate(post.publishedAt)}</time>
               {author}
               {post.tags?.[0] ? <span>#{post.tags[0].name}</span> : null}
+              <CommentCount count={post.commentCount} />
             </div>
             <h2 className="post-title-link font-display mt-1.5 text-lg leading-snug tracking-tight md:text-xl">
               <Link href={href}>{post.title}</Link>
@@ -139,6 +151,7 @@ export function PostListItem({
                 <time dateTime={post.publishedAt}>{formatDate(post.publishedAt)}</time>
                 {author}
                 {post.tags?.[0] ? <span>#{post.tags[0].name}</span> : null}
+                <CommentCount count={post.commentCount} />
               </div>
               <h2 className="post-title-link font-display mt-4 text-3xl leading-[1.15] tracking-tight md:text-5xl">
                 <Link href={href}>{post.title}</Link>
@@ -194,6 +207,7 @@ export function PostListItem({
             <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--ink-faint)]">
               <time dateTime={post.publishedAt}>{formatDate(post.publishedAt)}</time>
               {author}
+              <CommentCount count={post.commentCount} />
             </div>
             <h2 className="post-title-link font-display mt-2 text-xl leading-snug md:text-2xl">
               <Link href={href}>{post.title}</Link>
@@ -214,11 +228,7 @@ export function PostListItem({
 
   return (
     <article className={`group animate-rise ${delayClass}`}>
-      <div
-        className={`post-panel grid items-stretch gap-0 overflow-hidden md:grid-cols-2 ${
-          reverse ? 'md:[&>div:first-child]:order-2' : ''
-        }`}
-      >
+      <div className="post-panel grid items-stretch gap-0 overflow-hidden md:grid-cols-2">
         <Link
           href={href}
           className={`relative min-h-[200px] overflow-hidden md:min-h-[240px] ${cover ? '' : tone}`}
@@ -244,6 +254,7 @@ export function PostListItem({
             <span className="font-display text-[var(--accent-2)]">{indexLabel(index)}</span>
             <time dateTime={post.publishedAt}>{formatDate(post.publishedAt)}</time>
             {author}
+            <CommentCount count={post.commentCount} />
           </div>
           <h2 className="post-title-link font-display mt-3 text-2xl leading-snug md:text-3xl">
             <Link href={href}>{post.title}</Link>

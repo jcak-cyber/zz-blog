@@ -18,6 +18,7 @@ function mapSummary(
       nickname: post.author.nickname,
       avatarUrl: post.author.avatarUrl,
     },
+    commentCount: post._count.comments,
   };
 }
 

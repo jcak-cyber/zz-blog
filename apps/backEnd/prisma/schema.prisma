@@ -29,10 +29,11 @@ model User {
   bio          String?
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
-  posts        Post[]
-  comments     Comment[]
-  uploads      Upload[]
-  reactions    PostReaction[]
+  posts             Post[]
+  comments          Comment[]
+  uploads           Upload[]
+  reactions         PostReaction[]
+  commentReactions  CommentReaction[]
 }
 
 model Category {
@@ -83,19 +84,33 @@ model PostTag {
 }
 
 model Comment {
-  id        String    @id @default(cuid())
+  id        String            @id @default(cuid())
   content   String
   postId    String
   authorId  String
   parentId  String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
-  author    User      @relation(fields: [authorId], references: [id])
-  parent    Comment?  @relation("CommentTree", fields: [parentId], references: [id])
-  children  Comment[] @relation("CommentTree")
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  post      Post              @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author    User              @relation(fields: [authorId], references: [id])
+  parent    Comment?          @relation("CommentTree", fields: [parentId], references: [id])
+  children  Comment[]         @relation("CommentTree")
+  reactions CommentReaction[]
 
   @@index([postId, parentId])
+  @@index([postId, createdAt(sort: Desc)])
+}
+
+model CommentReaction {
+  id        String   @id @default(cuid())
+  commentId String
+  userId    String
+  createdAt DateTime @default(now())
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId])
+  @@index([commentId])
 }
 
 model Upload {

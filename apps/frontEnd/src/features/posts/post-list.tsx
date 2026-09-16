@@ -7,7 +7,7 @@ export function PostList({
   hideAuthor = false,
 }: {
   posts: PostSummary[];
-  /** magazine：首页大卡；list：小图 + 列表行 */
+  /** magazine：首页纵向列表；list：紧凑小图列表 */
   layout?: 'magazine' | 'list';
   hideAuthor?: boolean;
 }) {
@@ -39,37 +39,17 @@ export function PostList({
     );
   }
 
-  const [featured, second, ...others] = posts;
-
   return (
-    <div className="space-y-8 md:space-y-10">
-      <PostListItem post={featured} index={0} priority variant="featured" />
-
-      {second ? (
-        <div className="grid gap-5 md:grid-cols-12 md:gap-6">
-          <div className={others.length ? 'md:col-span-5' : 'md:col-span-12'}>
-            <PostListItem
-              post={second}
-              index={1}
-              priority
-              variant={others.length ? 'tall' : 'row'}
-            />
-          </div>
-
-          {others.length > 0 ? (
-            <div className="grid gap-5 md:col-span-7">
-              {others.map((post, i) => (
-                <PostListItem
-                  key={post.id}
-                  post={post}
-                  index={i + 2}
-                  variant={i === 0 ? 'row' : 'tile'}
-                />
-              ))}
-            </div>
-          ) : null}
-        </div>
-      ) : null}
+    <div className="space-y-5 md:space-y-6">
+      {posts.map((post, i) => (
+        <PostListItem
+          key={post.id}
+          post={post}
+          index={i}
+          priority={i < 2}
+          variant="row"
+        />
+      ))}
     </div>
   );
 }

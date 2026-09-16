@@ -1266,6 +1266,267 @@ body:has(.site-shell--desk) {
   color: color-mix(in srgb, #8b3a2a 85%, var(--ink));
 }
 
+/* —— 评论侧栏（006） —— */
+.post-comments-root {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.post-comments-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: color-mix(in srgb, var(--ink) 35%, transparent);
+  cursor: pointer;
+}
+
+.post-comments-drawer {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  width: min(100vw, 26rem);
+  height: 100%;
+  background: color-mix(in srgb, var(--paper-bright) 92%, var(--paper));
+  border-left: 1px solid var(--line);
+  box-shadow: -16px 0 40px -28px color-mix(in srgb, var(--ink) 55%, transparent);
+  color: var(--ink);
+}
+
+.post-comments-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.1rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 85%, transparent);
+}
+
+.post-comments-title {
+  margin: 0;
+  font-family: var(--font-display), serif;
+  font-size: 1.25rem;
+  letter-spacing: 0.02em;
+}
+
+.post-comments-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: 0;
+  border-radius: 0.25rem;
+  background: transparent;
+  color: var(--ink-muted);
+  cursor: pointer;
+}
+
+.post-comments-close:hover {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+.post-comment-composer {
+  padding: 1rem 1.1rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+}
+
+.post-comment-composer-row {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.post-comment-avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent-soft) 55%, var(--paper));
+}
+
+.post-comment-avatar-fallback {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  font-size: 0.9rem;
+  color: var(--accent);
+}
+
+.post-comment-composer-main {
+  min-width: 0;
+  flex: 1;
+}
+
+.post-comment-input {
+  width: 100%;
+  resize: vertical;
+  min-height: 4.5rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: color-mix(in srgb, var(--paper) 88%, var(--ink) 12%);
+  color: var(--ink);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.post-comment-input::placeholder {
+  color: var(--ink-faint);
+}
+
+.post-comment-composer-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.55rem;
+}
+
+.post-comment-remaining {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--ink-faint);
+}
+
+.post-comment-composer-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.post-comment-tool-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.85rem;
+  height: 1.85rem;
+  border: 0;
+  border-radius: 0.25rem;
+  background: transparent;
+  color: var(--ink-muted);
+  cursor: pointer;
+}
+
+.post-comment-tool-btn:hover {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+.post-comment-submit {
+  min-height: 1.85rem;
+  padding: 0.25rem 0.85rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--paper-bright);
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.post-comment-submit:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+.post-comment-hint,
+.post-comment-error {
+  margin: 0.45rem 0 0;
+  font-size: 0.8rem;
+}
+
+.post-comment-hint {
+  color: var(--ink-muted);
+}
+
+.post-comment-error {
+  color: color-mix(in srgb, #8b3a2a 85%, var(--ink));
+}
+
+.post-comments-list {
+  flex: 1;
+  overflow: auto;
+  padding: 0.75rem 1.1rem 1.5rem;
+}
+
+.post-comments-empty {
+  margin: 1.5rem 0;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--ink-faint);
+}
+
+.post-comment-item {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+}
+
+.post-comment-body {
+  min-width: 0;
+  flex: 1;
+}
+
+.post-comment-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.65rem;
+}
+
+.post-comment-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.post-comment-date {
+  font-size: 0.75rem;
+  color: var(--ink-faint);
+}
+
+.post-comment-item-actions {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.post-comment-like {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-height: 1.6rem;
+  padding: 0.1rem 0.35rem;
+  border: 0;
+  border-radius: 0.25rem;
+  background: transparent;
+  color: var(--ink-faint);
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.post-comment-like:hover {
+  color: var(--ink-muted);
+}
+
+.post-comment-like--active {
+  color: var(--accent);
+}
+
+.post-comment-content {
+  margin: 0.35rem 0 0;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 /* —— 作者撰写台（003）：对齐 post-panel / 登录纸感 —— */
 .author-page {
   @apply py-10 md:py-14;

@@ -18,6 +18,7 @@ export type PostSummary = {
   publishedAt: string;
   tags: TagSummary[];
   author: AuthorSummary;
+  commentCount?: number;
 };
 
 export type PostDetail = {
@@ -32,6 +33,7 @@ export type PostDetail = {
   tags: TagSummary[];
   category?: { name: string; slug: string } | null;
   author: AuthorSummary;
+  commentCount?: number;
 };
 
 export type ReactionSummary = {

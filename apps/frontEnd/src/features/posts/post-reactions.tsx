@@ -2,24 +2,31 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ThumbsDown, ThumbsUp } from 'lucide-react';
+import { MessageCircle, ThumbsDown, ThumbsUp } from 'lucide-react';
 import {
   deleteReaction,
   fetchReactions,
   putReaction,
   type ReactionSummary,
 } from '@/lib/posts';
+import { PostCommentsDrawer } from '@/features/posts/post-comments-drawer';
 import { useNavigationLoading } from '@/features/navigation/navigation-provider';
 import { cn } from '@/lib/utils';
 
-type Props = { slug: string };
+type Props = { slug: string; initialCommentCount?: number };
 
-export function PostReactions({ slug }: Props) {
+export function PostReactions({ slug, initialCommentCount = 0 }: Props) {
   const router = useRouter();
   const { startNavigating } = useNavigationLoading();
   const [data, setData] = useState<ReactionSummary | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [commentCount, setCommentCount] = useState(initialCommentCount);
+
+  useEffect(() => {
+    setCommentCount(initialCommentCount);
+  }, [initialCommentCount, slug]);
 
   useEffect(() => {
     let cancelled = false;
@@ -92,12 +99,29 @@ export function PostReactions({ slug }: Props) {
           <ThumbsDown className="size-4" aria-hidden />
           <span>{dislikeCount}</span>
         </button>
+        <button
+          type="button"
+          className={cn('post-reaction-btn', drawerOpen && 'post-reaction-btn--active')}
+          aria-expanded={drawerOpen}
+          aria-label="评论"
+          onClick={() => setDrawerOpen(true)}
+        >
+          <MessageCircle className="size-4" aria-hidden />
+          <span>{commentCount}</span>
+        </button>
       </div>
       {error ? (
         <p role="alert" className="post-reactions-error">
           {error}
         </p>
       ) : null}
+      <PostCommentsDrawer
+        slug={slug}
+        open={drawerOpen}
+        commentCount={commentCount}
+        onClose={() => setDrawerOpen(false)}
+        onCountChange={setCommentCount}
+      />
     </div>
   );
 }
