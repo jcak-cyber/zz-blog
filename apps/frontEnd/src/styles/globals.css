@@ -338,7 +338,9 @@ body:has(.site-shell--desk) {
   letter-spacing: 0.42em;
   text-transform: uppercase;
   color: var(--ink-faint);
-  transition: color 0.3s ease, letter-spacing 0.4s var(--ease-out);
+  transition:
+    color 0.3s ease,
+    letter-spacing 0.4s var(--ease-out);
 }
 
 .site-brand:hover .site-brand-vert {
@@ -1273,6 +1275,7 @@ body:has(.site-shell--desk) {
   z-index: 60;
   display: flex;
   justify-content: flex-end;
+  pointer-events: none;
 }
 
 .post-comments-backdrop {
@@ -1280,7 +1283,15 @@ body:has(.site-shell--desk) {
   inset: 0;
   border: 0;
   background: color-mix(in srgb, var(--ink) 35%, transparent);
-  cursor: pointer;
+  cursor: default;
+  opacity: 0;
+  transition: opacity 0.28s ease;
+  /* 不拦截左侧页面滚动与点击；关闭用侧栏按钮 / Esc */
+  pointer-events: none;
+}
+
+.post-comments-root--open .post-comments-backdrop {
+  opacity: 1;
 }
 
 .post-comments-drawer {
@@ -1294,6 +1305,21 @@ body:has(.site-shell--desk) {
   border-left: 1px solid var(--line);
   box-shadow: -16px 0 40px -28px color-mix(in srgb, var(--ink) 55%, transparent);
   color: var(--ink);
+  transform: translate3d(100%, 0, 0);
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+  pointer-events: auto;
+}
+
+.post-comments-root--open .post-comments-drawer {
+  transform: translate3d(0, 0, 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .post-comments-backdrop,
+  .post-comments-drawer {
+    transition: none;
+  }
 }
 
 .post-comments-header {

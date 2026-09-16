@@ -38,13 +38,7 @@ function formatCommentDate(value: string) {
   }
 }
 
-export function PostCommentsDrawer({
-  slug,
-  open,
-  commentCount,
-  onClose,
-  onCountChange,
-}: Props) {
+export function PostCommentsDrawer({ slug, open, commentCount, onClose, onCountChange }: Props) {
   const router = useRouter();
   const { startNavigating } = useNavigationLoading();
   const [items, setItems] = useState<CommentItem[]>([]);
@@ -53,6 +47,8 @@ export function PostCommentsDrawer({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [composerError, setComposerError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+  const [entered, setEntered] = useState(false);
 
   const requireLogin = useCallback(() => {
     startNavigating();
@@ -78,6 +74,19 @@ export function PostCommentsDrawer({
     if (!open) return;
     void load();
   }, [open, load]);
+
+  useEffect(() => {
+    if (open) {
+      setMounted(true);
+      const id = window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => setEntered(true));
+      });
+      return () => window.cancelAnimationFrame(id);
+    }
+    setEntered(false);
+    const timer = window.setTimeout(() => setMounted(false), 280);
+    return () => window.clearTimeout(timer);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -118,9 +127,7 @@ export function PostCommentsDrawer({
         : await likeComment(slug, item.id);
       setItems((prev) =>
         prev.map((c) =>
-          c.id === item.id
-            ? { ...c, likeCount: next.likeCount, likedByMe: next.likedByMe }
-            : c,
+          c.id === item.id ? { ...c, likeCount: next.likeCount, likedByMe: next.likedByMe } : c,
         ),
       );
     } catch (err) {
@@ -153,11 +160,16 @@ export function PostCommentsDrawer({
     }
   }
 
-  if (!open) return null;
+  if (!mounted) return null;
 
   return (
-    <div className="post-comments-root" role="dialog" aria-modal="true" aria-label="评论">
-      <button type="button" className="post-comments-backdrop" aria-label="关闭评论" onClick={onClose} />
+    <div
+      className={cn('post-comments-root', entered && 'post-comments-root--open')}
+      role="dialog"
+      aria-modal="true"
+      aria-label="评论"
+    >
+      <div className="post-comments-backdrop" aria-hidden />
       <aside className="post-comments-drawer">
         <header className="post-comments-header">
           <h2 className="post-comments-title">评论 {total}</h2>
