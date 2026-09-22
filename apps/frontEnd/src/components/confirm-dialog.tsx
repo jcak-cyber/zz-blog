@@ -38,7 +38,7 @@ export function ConfirmDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent className="rounded-sm bg-[var(--paper-bright)] ring-[var(--line)]">
         <AlertDialogHeader>
-          <AlertDialogTitle className="font-brush text-xl font-normal tracking-tight">
+          <AlertDialogTitle className="font-brush text-balance text-xl font-normal">
             {title}
           </AlertDialogTitle>
           <AlertDialogDescription className="text-[var(--ink-muted)]">

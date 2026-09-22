@@ -188,8 +188,7 @@ export function PostEditor({ mode, initial }: Props) {
     <form className="author-editor" onSubmit={onSubmit}>
       <header className="author-editor-top">
         <div className="author-editor-heading">
-          <p className="author-eyebrow">WRITING DESK</p>
-          <h1 className="font-brush text-2xl leading-none">
+          <h1 className="font-brush text-balance text-2xl leading-none">
             {mode === 'create' ? '写新文章' : '继续编辑'}
           </h1>
         </div>

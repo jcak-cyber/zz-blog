@@ -50,12 +50,12 @@ export function ProfileNicknameForm({ nickname }: Props) {
   if (!editing) {
     return (
       <div className="mt-5">
-        <p className="text-xs tracking-[0.18em] text-[#f0d2c4]">昵称</p>
+        <p className="text-xs text-[#f0d2c4]">昵称</p>
         <div className="mt-2 flex flex-wrap items-center gap-3">
-          <p className="text-base font-medium tracking-wide text-[#f7f1e6]">{nickname}</p>
+          <p className="text-base font-medium text-[#f7f1e6]">{nickname}</p>
           <button
             type="button"
-            className="inline-flex items-center gap-1.5 rounded-sm border border-[color-mix(in_srgb,#f0d2c4_55%,transparent)] bg-[color-mix(in_srgb,#f7f1e6_12%,transparent)] px-2.5 py-1 text-xs tracking-wide text-[#f0d2c4] transition hover:border-[#f0d2c4] hover:bg-[color-mix(in_srgb,#f7f1e6_20%,transparent)] hover:text-[#f7f1e6]"
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-sm border border-[color-mix(in_srgb,#f0d2c4_55%,transparent)] bg-[color-mix(in_srgb,#f7f1e6_12%,transparent)] px-2.5 py-1 text-xs text-[#f0d2c4] transition hover:border-[#f0d2c4] hover:bg-[color-mix(in_srgb,#f7f1e6_20%,transparent)] hover:text-[#f7f1e6]"
             onClick={() => {
               setValue(nickname);
               setError(null);

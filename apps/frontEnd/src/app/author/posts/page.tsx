@@ -53,8 +53,12 @@ export default function AuthorPostsPage() {
 
   if (!items) {
     return (
-      <div className="author-page">
-        <p className="text-sm text-[var(--ink-faint)]">加载中…</p>
+      <div className="author-page" aria-busy="true" aria-label="文章列表加载中">
+        <div className="space-y-3">
+          <div className="h-16 bg-[var(--paper-deep)]" />
+          <div className="h-16 bg-[var(--paper-deep)]" />
+          <div className="h-16 bg-[var(--paper-deep)]" />
+        </div>
       </div>
     );
   }
@@ -63,8 +67,7 @@ export default function AuthorPostsPage() {
     <div className="author-page">
       <header className="author-page-head">
         <div>
-          <p className="author-eyebrow">MY MANUSCRIPTS</p>
-          <h1 className="font-brush text-3xl md:text-4xl">我的文章</h1>
+          <h1 className="font-brush text-balance text-3xl md:text-4xl">我的文章</h1>
         </div>
         <Link href="/author/posts/new" className={cn(buttonVariants({ variant: 'default' }))}>
           写新文章

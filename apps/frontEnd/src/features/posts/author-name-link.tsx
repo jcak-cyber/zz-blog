@@ -30,7 +30,7 @@ export function AuthorNameLink({
     <Link
       href={`/u/${encodeURIComponent(username)}`}
       className={cn(
-        'relative z-[2] inline-flex items-center gap-1.5 transition hover:text-[var(--accent)]',
+        'relative z-raised inline-flex items-center gap-1.5 transition hover:text-[var(--accent)]',
         className,
       )}
     >

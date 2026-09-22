@@ -40,11 +40,10 @@ export function AuthorEntry({ user }: { user: AuthUser }) {
     <div className="mx-auto max-w-5xl">
       <div className="grid overflow-hidden border border-[var(--line)] md:grid-cols-[0.9fr_1.1fr]">
         <aside className="hero-band relative flex min-h-[180px] flex-col justify-between px-7 py-8 md:min-h-[360px] md:px-9 md:py-10">
-          <div className="relative z-[1]">
-            <p className="text-xs tracking-[0.35em] text-[#f0d2c4]">AUTHOR ENTRY</p>
-            <h1 className="font-brush mt-4 text-4xl md:text-5xl">手稿台</h1>
+          <div className="relative z-raised">
+            <h1 className="font-brush text-balance text-4xl md:text-5xl">手稿台</h1>
             <ProfileNicknameForm nickname={user.nickname || user.username} />
-            <p className="mt-4 max-w-xs text-sm leading-7 text-[#e7e0d4]">
+            <p className="mt-4 max-w-xs text-pretty text-sm leading-7 text-[#e7e0d4]">
               已验证身份。可在此撰写、预约发布，或继续编辑草稿。
             </p>
           </div>
@@ -53,13 +52,10 @@ export function AuthorEntry({ user }: { user: AuthUser }) {
         <section className="bg-[color-mix(in_srgb,var(--paper-bright)_88%,transparent)] px-6 py-9 md:px-10 md:py-12">
           <ProfileAvatar user={user} />
 
-          <p className="mt-6 text-xs tracking-[0.28em] text-[var(--ink-faint)]">SIGNED IN</p>
-          <h2 className="font-brush mt-2 text-3xl tracking-tight">你已登录</h2>
+          <h2 className="font-brush mt-6 text-balance text-3xl">你已登录</h2>
           <p className="mt-4 text-[var(--ink-muted)]">
             当前账号 <span className="text-[var(--ink)]">{user.username}</span>
-            {user.role ? (
-              <span className="text-[var(--ink-faint)]"> · {user.role}</span>
-            ) : null}
+            {user.role ? <span className="text-[var(--ink-faint)]"> · {user.role}</span> : null}
           </p>
 
           {error ? (

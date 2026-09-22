@@ -154,7 +154,7 @@ function RegisterFormInner() {
             onClick={() => setShowPassword((v) => !v)}
             aria-pressed={showPassword}
             aria-label={showPassword ? '隐藏密码' : '显示密码'}
-            className="text-xs tracking-wide text-[var(--ink-faint)] transition hover:text-[var(--accent)]"
+            className="text-xs text-[var(--ink-faint)] transition hover:text-[var(--accent)]"
           >
             {showPassword ? '隐藏密码' : '显示密码'}
           </button>
@@ -193,7 +193,7 @@ function RegisterFormInner() {
             onClick={() => setShowConfirm((v) => !v)}
             aria-pressed={showConfirm}
             aria-label={showConfirm ? '隐藏确认密码' : '显示确认密码'}
-            className="text-xs tracking-wide text-[var(--ink-faint)] transition hover:text-[var(--accent)]"
+            className="text-xs text-[var(--ink-faint)] transition hover:text-[var(--accent)]"
           >
             {showConfirm ? '隐藏密码' : '显示密码'}
           </button>
@@ -264,7 +264,7 @@ function RegisterFormInner() {
             type="button"
             onClick={() => void loadCaptcha()}
             disabled={captchaLoading}
-            className="inline-flex shrink-0 items-center gap-1 text-xs tracking-wide text-[var(--ink-faint)] transition hover:text-[var(--accent)] disabled:opacity-50"
+            className="inline-flex min-h-11 shrink-0 items-center gap-1 text-xs text-[var(--ink-faint)] transition hover:text-[var(--accent)] disabled:opacity-50"
           >
             <RefreshCw className={cn('size-3.5', captchaLoading && 'animate-spin')} aria-hidden />
             换一张
@@ -279,7 +279,7 @@ function RegisterFormInner() {
         </p>
       ) : null}
 
-      <Button type="submit" disabled={pending} className="h-10 w-full tracking-wide" size="lg">
+      <Button type="submit" disabled={pending} className="h-10 w-full" size="lg">
         {pending ? '注册中…' : '创建账号'}
       </Button>
 

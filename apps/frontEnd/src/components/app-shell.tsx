@@ -41,23 +41,31 @@ export function AppShell({ children }: { children: ReactNode }) {
   if (desk) {
     return (
       <div className="site-shell site-shell--desk">
+        <a href="#main" className="skip-link">
+          跳到正文
+        </a>
         <header className="site-header mx-auto flex w-full items-center justify-between gap-4 py-3">
           <SiteBrand compact />
           <SiteNav />
         </header>
-        <main className="site-main--desk">{children}</main>
+        <main id="main" className="site-main--desk">
+          {children}
+        </main>
       </div>
     );
   }
 
   return (
     <div className={cn('site-shell', workspace && 'site-shell--author')}>
+      <a href="#main" className="skip-link">
+        跳到正文
+      </a>
       <div className="site-frame">
-        <header className="site-header flex w-full items-center justify-between gap-4 pb-3 pt-8">
+        <header className="site-header flex w-full items-center justify-between gap-4 pb-3">
           <SiteBrand />
           <SiteNav />
         </header>
-        <main>{children}</main>
+        <main id="main">{children}</main>
         {!workspace ? (
           <footer className="py-16 text-sm text-[var(--ink-faint)]">
             © {new Date().getFullYear()} zz-blog · 写给慢慢读的人

@@ -19,19 +19,19 @@ export function ImageLightbox({ open, onOpenChange, src, alt = '图片预览' }:
       <Dialog.Portal>
         <Dialog.Backdrop
           className={cn(
-            'fixed inset-0 z-[80] bg-black/70 backdrop-blur-[2px]',
+            'fixed inset-0 z-modal bg-black/70',
             'data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0',
           )}
         />
         <Dialog.Popup
           className={cn(
-            'fixed inset-0 z-[81] flex items-center justify-center p-4 outline-none md:p-8',
+            'fixed inset-0 z-toast flex items-center justify-center p-4 outline-none md:p-8',
             'data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0',
           )}
         >
           <Dialog.Title className="sr-only">{alt}</Dialog.Title>
           <Dialog.Close
-            className="absolute right-4 top-4 z-[82] inline-flex size-9 items-center justify-center rounded-sm border border-white/20 bg-black/40 text-white transition hover:bg-black/60"
+            className="absolute right-[max(1rem,env(safe-area-inset-right))] top-[max(1rem,env(safe-area-inset-top))] inline-flex size-11 items-center justify-center rounded-sm border border-white/20 bg-black/40 text-white transition hover:bg-black/60"
             aria-label="关闭预览"
           >
             <XIcon className="size-4" />

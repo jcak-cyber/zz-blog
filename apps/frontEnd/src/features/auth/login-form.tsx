@@ -122,9 +122,7 @@ export function LoginForm() {
       const { user } = await login(
         username.trim(),
         password,
-        requiresCaptcha
-          ? { captchaId, captchaCode: captchaCode.trim() }
-          : undefined,
+        requiresCaptcha ? { captchaId, captchaCode: captchaCode.trim() } : undefined,
       );
       setUser(user);
       const dest = searchParams.get('next');
@@ -195,7 +193,7 @@ export function LoginForm() {
             onClick={() => setShowPassword((v) => !v)}
             aria-pressed={showPassword}
             aria-label={showPassword ? '隐藏密码' : '显示密码'}
-            className="text-xs tracking-wide text-[var(--ink-faint)] transition hover:text-[var(--accent)]"
+            className="text-xs text-[var(--ink-faint)] transition hover:text-[var(--accent)]"
           >
             {showPassword ? '隐藏密码' : '显示密码'}
           </button>
@@ -266,7 +264,7 @@ export function LoginForm() {
               type="button"
               onClick={() => void loadCaptcha()}
               disabled={captchaLoading}
-              className="inline-flex shrink-0 items-center gap-1 text-xs tracking-wide text-[var(--ink-faint)] transition hover:text-[var(--accent)] disabled:opacity-50"
+              className="inline-flex min-h-11 shrink-0 items-center gap-1 text-xs text-[var(--ink-faint)] transition hover:text-[var(--accent)] disabled:opacity-50"
             >
               <RefreshCw className={cn('size-3.5', captchaLoading && 'animate-spin')} aria-hidden />
               换一张
@@ -282,7 +280,7 @@ export function LoginForm() {
         </p>
       ) : null}
 
-      <Button type="submit" disabled={pending} className="h-10 w-full tracking-wide" size="lg">
+      <Button type="submit" disabled={pending} className="h-10 w-full" size="lg">
         {pending ? '登录中…' : '进入手稿室'}
       </Button>
 

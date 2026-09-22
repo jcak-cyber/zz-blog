@@ -24,7 +24,7 @@ function indexLabel(index: number) {
 function CommentCount({ count }: { count?: number }) {
   const n = count ?? 0;
   return (
-    <span className="inline-flex items-center gap-1" title={`${n} 条评论`}>
+    <span className="inline-flex items-center gap-1 tabular-nums" title={`${n} 条评论`}>
       <MessageCircle className="size-3.5 opacity-80" aria-hidden />
       <span>{n}</span>
       <span className="sr-only">条评论</span>
@@ -49,14 +49,6 @@ export function PostListItem({
   hideAuthor?: boolean;
 }) {
   const cover = resolveMediaUrl(post.coverImageUrl);
-  const delayClass =
-    index === 0
-      ? 'animate-rise-delay-1'
-      : index === 1
-        ? 'animate-rise-delay-2'
-        : index === 2
-          ? 'animate-rise-delay-3'
-          : 'animate-rise-delay-4';
   const tone = tones[index % tones.length];
   const href = `/posts/${post.slug}`;
   const author =
@@ -70,7 +62,7 @@ export function PostListItem({
 
   if (variant === 'compact') {
     return (
-      <article className={`group animate-rise ${delayClass}`}>
+      <article className="group">
         <div className="post-panel flex gap-4 overflow-hidden p-3 md:gap-5 md:p-3.5">
           <Link
             href={href}
@@ -100,11 +92,13 @@ export function PostListItem({
               {post.tags?.[0] ? <span>#{post.tags[0].name}</span> : null}
               <CommentCount count={post.commentCount} />
             </div>
-            <h2 className="post-title-link font-display mt-1.5 text-lg leading-snug tracking-tight md:text-xl">
+            <h2 className="post-title-link font-display mt-1.5 text-balance text-lg leading-snug md:text-xl">
               <Link href={href}>{post.title}</Link>
             </h2>
             {post.excerpt ? (
-              <p className="mt-1 line-clamp-1 text-sm text-[var(--ink-muted)]">{post.excerpt}</p>
+              <p className="mt-1 line-clamp-1 text-pretty text-sm text-[var(--ink-muted)]">
+                {post.excerpt}
+              </p>
             ) : null}
           </div>
         </div>
@@ -114,7 +108,7 @@ export function PostListItem({
 
   if (variant === 'featured') {
     return (
-      <article className={`group relative overflow-x-clip animate-rise ${delayClass}`}>
+      <article className="group relative overflow-x-clip">
         <div className="pointer-events-none absolute left-1 -top-8 watermark-index">
           {indexLabel(index)}
         </div>
@@ -140,12 +134,11 @@ export function PostListItem({
                   <span className="font-brush text-5xl text-white/90 md:text-7xl">记</span>
                 </div>
               )}
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-black/35 via-transparent to-transparent" />
             </Link>
 
             <div className="flex flex-col justify-center px-1 py-2 md:px-2">
               <div className="flex flex-wrap items-center gap-3 text-sm text-[var(--ink-faint)]">
-                <span className="bg-[var(--accent)] px-2 py-0.5 text-xs tracking-widest text-[var(--paper-bright)]">
+                <span className="bg-[var(--accent)] px-2 py-0.5 text-xs text-[var(--paper-bright)]">
                   最新
                 </span>
                 <time dateTime={post.publishedAt}>{formatDate(post.publishedAt)}</time>
@@ -153,11 +146,11 @@ export function PostListItem({
                 {post.tags?.[0] ? <span>#{post.tags[0].name}</span> : null}
                 <CommentCount count={post.commentCount} />
               </div>
-              <h2 className="post-title-link font-display mt-4 text-3xl leading-[1.15] tracking-tight md:text-5xl">
+              <h2 className="post-title-link font-display mt-4 text-balance text-3xl leading-[1.15] md:text-5xl">
                 <Link href={href}>{post.title}</Link>
               </h2>
               {post.excerpt ? (
-                <p className="mt-4 text-base leading-7 text-[var(--ink-muted)] md:text-lg">
+                <p className="mt-4 text-pretty text-base leading-7 text-[var(--ink-muted)] md:text-lg">
                   {post.excerpt}
                 </p>
               ) : null}
@@ -177,7 +170,7 @@ export function PostListItem({
 
   if (variant === 'tall' || variant === 'tile') {
     return (
-      <article className={`group h-full animate-rise ${delayClass}`}>
+      <article className="group h-full">
         <div className="post-panel flex h-full flex-col overflow-hidden">
           <Link
             href={href}
@@ -199,7 +192,7 @@ export function PostListItem({
                 <span className="font-brush text-6xl text-white/85">{indexLabel(index)}</span>
               </div>
             )}
-            <div className="absolute left-3 top-3 rounded-sm bg-black/45 px-2 py-1 text-xs tracking-wider text-white backdrop-blur-sm">
+            <div className="absolute left-3 top-3 rounded-sm bg-black/45 px-2 py-1 text-xs tabular-nums text-white">
               {indexLabel(index)}
             </div>
           </Link>
@@ -209,11 +202,11 @@ export function PostListItem({
               {author}
               <CommentCount count={post.commentCount} />
             </div>
-            <h2 className="post-title-link font-display mt-2 text-xl leading-snug md:text-2xl">
+            <h2 className="post-title-link font-display mt-2 text-balance text-xl leading-snug md:text-2xl">
               <Link href={href}>{post.title}</Link>
             </h2>
             {post.excerpt ? (
-              <p className="mt-2 line-clamp-3 flex-1 text-sm leading-6 text-[var(--ink-muted)]">
+              <p className="mt-2 line-clamp-3 flex-1 text-pretty text-sm leading-6 text-[var(--ink-muted)]">
                 {post.excerpt}
               </p>
             ) : null}
@@ -227,7 +220,7 @@ export function PostListItem({
   }
 
   return (
-    <article className={`group animate-rise ${delayClass}`}>
+    <article className="group">
       <div className="post-panel grid items-stretch gap-0 overflow-hidden md:grid-cols-2">
         <Link
           href={href}
@@ -243,9 +236,8 @@ export function PostListItem({
               priority={priority}
             />
           ) : (
-            <div className="absolute inset-0 flex items-end justify-between p-5">
+            <div className="absolute inset-0 flex items-end p-5">
               <span className="font-brush text-5xl text-white/90">{indexLabel(index)}</span>
-              <span className="text-xs tracking-[0.2em] text-white/70">ESSAY</span>
             </div>
           )}
         </Link>
@@ -256,11 +248,11 @@ export function PostListItem({
             {author}
             <CommentCount count={post.commentCount} />
           </div>
-          <h2 className="post-title-link font-display mt-3 text-2xl leading-snug md:text-3xl">
+          <h2 className="post-title-link font-display mt-3 text-balance text-2xl leading-snug md:text-3xl">
             <Link href={href}>{post.title}</Link>
           </h2>
           {post.excerpt ? (
-            <p className="mt-3 line-clamp-3 text-sm leading-6 text-[var(--ink-muted)] md:text-base">
+            <p className="mt-3 line-clamp-3 text-pretty text-sm leading-6 text-[var(--ink-muted)] md:text-base">
               {post.excerpt}
             </p>
           ) : null}

@@ -172,7 +172,9 @@ export function PostCommentsDrawer({ slug, open, commentCount, onClose, onCountC
       <div className="post-comments-backdrop" aria-hidden />
       <aside className="post-comments-drawer">
         <header className="post-comments-header">
-          <h2 className="post-comments-title">评论 {total}</h2>
+          <h2 className="post-comments-title">
+            评论 <span className="tabular-nums">{total}</span>
+          </h2>
           <button type="button" className="post-comments-close" aria-label="关闭" onClick={onClose}>
             <X className="size-5" aria-hidden />
           </button>
@@ -186,7 +188,14 @@ export function PostCommentsDrawer({ slug, open, commentCount, onClose, onCountC
         />
 
         <div className="post-comments-list">
-          {loading ? <p className="post-comments-empty">加载中…</p> : null}
+          {loading ? (
+            <div className="space-y-4 px-4 py-5" aria-busy="true" aria-label="评论加载中">
+              <div className="h-4 w-1/3 bg-[var(--paper-deep)]" />
+              <div className="h-16 bg-[var(--paper-deep)]" />
+              <div className="h-4 w-1/4 bg-[var(--paper-deep)]" />
+              <div className="h-16 bg-[var(--paper-deep)]" />
+            </div>
+          ) : null}
           {!loading && items.length === 0 ? (
             <p className="post-comments-empty">还没有评论，来写下第一条吧</p>
           ) : null}
@@ -236,7 +245,7 @@ export function PostCommentsDrawer({ slug, open, commentCount, onClose, onCountC
                         onClick={() => void onToggleLike(item)}
                       >
                         <ThumbsUp className="size-3.5" aria-hidden />
-                        <span>{item.likeCount}</span>
+                        <span className="tabular-nums">{item.likeCount}</span>
                       </button>
                     </div>
                   </div>

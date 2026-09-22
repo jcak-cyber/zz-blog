@@ -59,7 +59,7 @@ export function PostDetailView({ post, content }: { post: PostDetail; content: R
             </span>
           ) : null}
         </div>
-        <h1 className="mt-3 font-serif text-4xl leading-tight tracking-tight md:text-5xl">
+        <h1 className="mt-3 text-balance font-serif text-4xl leading-tight md:text-5xl">
           {post.title}
         </h1>
         {post.tags?.length ? (

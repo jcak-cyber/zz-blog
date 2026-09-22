@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import { ThemeProvider } from '@/components/theme-provider';
 import { AppShell } from '@/components/app-shell';
@@ -12,6 +12,10 @@ export const metadata: Metadata = {
     template: '%s · zz-blog',
   },
   description: '极简、高性能的个人博客',
+};
+
+export const viewport: Viewport = {
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

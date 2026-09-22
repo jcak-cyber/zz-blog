@@ -3,12 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { MessageCircle, ThumbsDown, ThumbsUp } from 'lucide-react';
-import {
-  deleteReaction,
-  fetchReactions,
-  putReaction,
-  type ReactionSummary,
-} from '@/lib/posts';
+import { deleteReaction, fetchReactions, putReaction, type ReactionSummary } from '@/lib/posts';
 import { PostCommentsDrawer } from '@/features/posts/post-comments-drawer';
 import { useNavigationLoading } from '@/features/navigation/navigation-provider';
 import { cn } from '@/lib/utils';
@@ -48,9 +43,7 @@ export function PostReactions({ slug, initialCommentCount = 0 }: Props) {
     setPending(true);
     try {
       const next =
-        data?.myReaction === value
-          ? await deleteReaction(slug)
-          : await putReaction(slug, value);
+        data?.myReaction === value ? await deleteReaction(slug) : await putReaction(slug, value);
       setData(next);
     } catch (err) {
       const status = (err as { status?: number })?.status;
@@ -83,7 +76,7 @@ export function PostReactions({ slug, initialCommentCount = 0 }: Props) {
           onClick={() => void onToggle('LIKE')}
         >
           <ThumbsUp className="size-4" aria-hidden />
-          <span>{likeCount}</span>
+          <span className="tabular-nums">{likeCount}</span>
         </button>
         <button
           type="button"
@@ -97,7 +90,7 @@ export function PostReactions({ slug, initialCommentCount = 0 }: Props) {
           onClick={() => void onToggle('DISLIKE')}
         >
           <ThumbsDown className="size-4" aria-hidden />
-          <span>{dislikeCount}</span>
+          <span className="tabular-nums">{dislikeCount}</span>
         </button>
         <button
           type="button"
@@ -107,7 +100,7 @@ export function PostReactions({ slug, initialCommentCount = 0 }: Props) {
           onClick={() => setDrawerOpen(true)}
         >
           <MessageCircle className="size-4" aria-hidden />
-          <span>{commentCount}</span>
+          <span className="tabular-nums">{commentCount}</span>
         </button>
       </div>
       {error ? (
